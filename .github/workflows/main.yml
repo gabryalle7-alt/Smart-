@@ -75,8 +75,8 @@ jobs:
                   applicationId "ro.profitride"
                   minSdk 24
                   targetSdk 34
-                  versionCode 20
-                  versionName "3.5"
+                  versionCode 21
+                  versionName "3.6"
               }
               buildTypes {
                   release {
@@ -311,6 +311,26 @@ jobs:
           </ScrollView>
           ''')
 
+          w('app/src/main/res/layout/activity_summary.xml', '''
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical" android:padding="24dp"
+              android:background="@drawable/bg_gradient"
+              android:layout_width="match_parent" android:layout_height="match_parent">
+              <TextView android:id="@+id/tvSummaryTitle" android:textSize="22sp" android:textStyle="bold"
+                  android:textColor="#333333" android:layout_width="match_parent" android:layout_height="wrap_content"
+                  android:layout_marginBottom="24dp"/>
+              <TextView android:id="@+id/tvSummaryContent" android:textSize="16sp" android:textColor="#111111"
+                  android:fontFamily="monospace" android:background="#FFFFFF" android:padding="20dp" android:elevation="8dp"
+                  android:lineSpacingExtra="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"
+                  android:layout_marginBottom="24dp"/>
+              <Button android:id="@+id/btnResetSummary" android:text="RESETEAZĂ DATELE"
+                  android:background="@drawable/rounded_btn" android:backgroundTint="#F44336"
+                  android:textColor="#FFFFFF" android:textStyle="bold" android:elevation="6dp"
+                  android:layout_width="match_parent" android:layout_height="wrap_content"/>
+          </LinearLayout>
+          ''')
+
           w('app/src/main/res/layout/activity_vehicle.xml', '''
           <?xml version="1.0" encoding="utf-8"?>
           <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
@@ -427,26 +447,6 @@ jobs:
           </ScrollView>
           ''')
 
-          w('app/src/main/res/layout/activity_summary.xml', '''
-          <?xml version="1.0" encoding="utf-8"?>
-          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:orientation="vertical" android:padding="24dp"
-              android:background="@drawable/bg_gradient"
-              android:layout_width="match_parent" android:layout_height="match_parent">
-              <TextView android:id="@+id/tvSummaryTitle" android:textSize="22sp" android:textStyle="bold"
-                  android:textColor="#333333" android:layout_width="match_parent" android:layout_height="wrap_content"
-                  android:layout_marginBottom="24dp"/>
-              <TextView android:id="@+id/tvSummaryContent" android:textSize="18sp" android:textColor="#111111"
-                  android:fontFamily="monospace" android:background="#FFFFFF" android:padding="20dp" android:elevation="8dp"
-                  android:lineSpacingExtra="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"
-                  android:layout_marginBottom="24dp"/>
-              <Button android:id="@+id/btnResetSummary" android:text="RESETEAZĂ DATELE"
-                  android:background="@drawable/rounded_btn" android:backgroundTint="#F44336"
-                  android:textColor="#FFFFFF" android:textStyle="bold" android:elevation="6dp"
-                  android:layout_width="match_parent" android:layout_height="wrap_content"/>
-          </LinearLayout>
-          ''')
-
           w('app/src/main/res/layout/activity_settings.xml', '''
           <?xml version="1.0" encoding="utf-8"?>
           <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
@@ -548,7 +548,18 @@ jobs:
           import android.graphics.Color
 
           object Calc {
-              data class Result(val text: String, val color: Int, val profitPerKm: Float, val profitPerHour: Float, val totalExpenses: Float, val netProfit: Float, val speech: String)
+              data class Result(
+                  val text: String, 
+                  val color: Int, 
+                  val profitPerKm: Float, 
+                  val profitPerHour: Float, 
+                  val totalExpenses: Float, 
+                  val netProfit: Float, 
+                  val speech: String,
+                  val commissionCut: Float,
+                  val fuelCost: Float,
+                  val extraCost: Float
+              )
               private val GREEN = Color.parseColor("#4CAF50")
               private val YELLOW = Color.parseColor("#FFEB3B")
               private val RED = Color.parseColor("#FF5252")
@@ -561,20 +572,25 @@ jobs:
                   val extraPerKm = p.getFloat("extraCost", 0.5f)
                   val minPerKm = p.getFloat("minPerKm", 2.5f)
                   val minPerHour = p.getFloat("minPerHour", 45f)
+                  
                   val totalKm = o.pickupKm + o.tripKm
                   val totalMin = o.pickupMinutes + o.tripMinutes
+                  
                   val commissionCut = o.priceRon * commission / 100f
                   val fuelCost = totalKm / 100f * consumption * fuelPrice
                   val extraCost = totalKm * extraPerKm
                   val totalExpenses = commissionCut + fuelCost + extraCost
                   val netProfit = o.priceRon - totalExpenses
+                  
                   val perKm = if (totalKm > 0f) netProfit / totalKm else 0f
                   val perHour = if (totalMin > 0) netProfit / (totalMin / 60f) else 0f
+                  
                   val (label, color) = when {
                       perHour >= minPerHour * 1.2f && perKm >= minPerKm -> "PROFITABIL" to GREEN
                       perHour >= minPerHour && perKm >= minPerKm * 0.8f -> "MEDIU" to YELLOW
                       else -> "NEPROFITABIL" to RED
                   }
+                  
                   val text = """
                       [%s]
                       ---------------------
@@ -586,12 +602,13 @@ jobs:
                       ---------------------
                       Total: %.1f km | %d min
                   """.trimIndent().format(label, perKm, perHour, totalExpenses, netProfit, totalKm, totalMin)
+                  
                   val speech = when (label) {
                       "PROFITABIL" -> "Profitabil. ${perKm.toInt()} lei pe km, ${perHour.toInt()} lei pe ora."
                       "MEDIU" -> "Mediu. ${perHour.toInt()} lei pe ora."
                       else -> "Neprofitabil."
                   }
-                  return Result(text, color, perKm, perHour, totalExpenses, netProfit, speech)
+                  return Result(text, color, perKm, perHour, totalExpenses, netProfit, speech, commissionCut, fuelCost, extraCost)
               }
           }
           ''')
@@ -849,6 +866,7 @@ jobs:
           }
           ''')
 
+          # AM MODIFICAT SUMMARY ACTIVITY PENTRU A AFISA DETALIAT CHELTUIELILE
           w('app/src/main/java/ro/profitride/SummaryActivity.kt', '''
           package ro.profitride
           import android.app.AlertDialog
@@ -879,10 +897,47 @@ jobs:
                           .setNegativeButton("Nu", null).show()
                   }
               }
+
               private fun loadSummary() {
-                  val (r, e, n) = calc()
-                  content.text = "Total Încasări: %.2f RON\\nTotal Cheltuieli: %.2f RON\\n---------------------\\nPROFIT NET: %.2f RON".format(r, e, n)
+                  var rev = 0f; var exp = 0f; var net = 0f
+                  var comm = 0f; var fuel = 0f; var wear = 0f
+                  
+                  val eff = maxOf(getStart(), prefs.getLong("reset_$period", 0L))
+                  try {
+                      openFileInput("offers.csv").bufferedReader().useLines { l ->
+                          l.forEach { line ->
+                              val p = line.split(",")
+                              if (p.size >= 8 && (p[0].toLongOrNull() ?: 0L) >= eff) {
+                                  rev += p[1].toFloatOrNull() ?: 0f
+                                  exp += p[6].toFloatOrNull() ?: 0f
+                                  net += p[7].toFloatOrNull() ?: 0f
+                                  // Daca avem formatul nou (11 coloane), luam si detaliile
+                                  if (p.size >= 11) {
+                                      comm += p[8].toFloatOrNull() ?: 0f
+                                      fuel += p[9].toFloatOrNull() ?: 0f
+                                      wear += p[10].toFloatOrNull() ?: 0f
+                                  }
+                              }
+                          }
+                      }
+                  } catch (_: Exception) {}
+
+                  content.text = """
+                      [VENITURI]
+                      Total Încasări: %.2f RON
+
+                      [CHELTUIELI]
+                      Comision platformă: %.2f RON
+                      Combustibil: %.2f RON
+                      Uzură: %.2f RON
+                      ---------------------
+                      Total Cheltuieli: %.2f RON
+
+                      [PROFIT]
+                      PROFIT NET: %.2f RON
+                  """.trimIndent().format(rev, comm, fuel, wear, exp, net)
               }
+
               private fun getStart(): Long {
                   val cal = Calendar.getInstance()
                   when (period) {
@@ -892,21 +947,6 @@ jobs:
                       "YEAR" -> { cal.set(Calendar.DAY_OF_YEAR, 1); cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0) }
                   }
                   return cal.timeInMillis
-              }
-              private fun calc(): Triple<Float, Float, Float> {
-                  var rev = 0f; var exp = 0f; var net = 0f
-                  val eff = maxOf(getStart(), prefs.getLong("reset_$period", 0L))
-                  try {
-                      openFileInput("offers.csv").bufferedReader().useLines { l ->
-                          l.forEach { line ->
-                              val p = line.split(",")
-                              if (p.size >= 8 && (p[0].toLongOrNull() ?: 0L) >= eff) {
-                                  rev += p[1].toFloatOrNull() ?: 0f; exp += p[6].toFloatOrNull() ?: 0f; net += p[7].toFloatOrNull() ?: 0f
-                              }
-                          }
-                      }
-                  } catch (_: Exception) {}
-                  return Triple(rev, exp, net)
               }
           }
           ''')
@@ -1051,7 +1091,8 @@ jobs:
                       val o = pendingOffer!!; val r = pendingResult!!
                       try {
                           openFileOutput("offers.csv", Context.MODE_APPEND).bufferedWriter().use {
-                              it.appendLine("${System.currentTimeMillis()},${o.priceRon},${o.pickupKm},${o.tripKm},${r.profitPerKm},${r.profitPerHour},${r.totalExpenses},${r.netProfit}")
+                              // FORMAT NOU: adaugam si comision, combustibil, uzura
+                              it.appendLine("${System.currentTimeMillis()},${o.priceRon},${o.pickupKm},${o.tripKm},${r.profitPerKm},${r.profitPerHour},${r.totalExpenses},${r.netProfit},${r.commissionCut},${r.fuelCost},${r.extraCost}")
                           }
                           handler.post { Toast.makeText(this, "Cursă salvată în sumar!", Toast.LENGTH_LONG).show() }
                       } catch (_: Exception) {}
