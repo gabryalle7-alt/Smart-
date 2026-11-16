@@ -1,0 +1,1006 @@
+name: Build ProfitRide APK
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-34" "build-tools;34.0.0"
+
+      - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.2
+
+      - name: Create project files with Python
+        run: |
+          python3 - <<'PYEOF'
+          import os
+
+          def w(path, text):
+              d = os.path.dirname(path)
+              if d: os.makedirs(d, exist_ok=True)
+              with open(path, 'w', encoding='utf-8') as f:
+                  f.write(text.strip() + '\n')
+
+          w('README.md', '''
+          # ProfitRide
+
+          Calculator de profit pentru curse Bolt/Uber, optimizat pentru **Honor Magic 5** (MagicOS).
+
+          ## Instalare APK
+
+          1. Descarca `app-debug.apk` din GitHub Actions -> rularea curenta -> **Artifacts** -> `ProfitRide-APK`
+          2. Transfera pe telefon (USB / Google Drive / e-mail)
+          3. Deschide fisierul -> permite **"Instalare din surse necunoscute"** daca iti cere
+          4. Instaleaza si deschide aplicatia
+
+          ## Setup obligatoriu pe Honor Magic 5 (MagicOS)
+
+          MagicOS inchide agresiv serviciile de fundal. **Fara acesti pasi, overlay-ul nu va aparea.**
+
+          ### 1. Afisare peste alte aplicatii
+          - In app: buton **"Permite afisare peste alte aplicatii"** -> activeaza
+          - Sau: Setari -> Aplicatii -> ProfitRide -> **Afisare ca pop-up** -> ON
+
+          ### 2. Serviciu de accesibilitate
+          - In app: buton **"Activeaza citirea automata"** -> ProfitRide -> **Activ**
+
+          ### 3. Baterie fara restrictii (CRITIC pe Honor)
+          - Setari -> Baterie -> **Lansare aplicatii** -> ProfitRide -> **Gestioneaza manual**
+            - Bifeaza: Lansare automata, Lansare secundara, Rulare in fundal
+          - Setari -> Aplicatii -> ProfitRide -> **Consum baterie** -> **Fara restrictii**
+
+          ### 4. Voce romana (pentru anunturi)
+          - Setari -> Limba si regiune -> **Iesire text in vorbire** -> Motor preferat -> **Google TTS**
+          - Instaleaza pachetul de limba **Romana**
+
+          ## Utilizare
+
+          - **Automat**: deschide Bolt/Uber -> cand apare o oferta, overlay negru apare cu rezultatul
+          - **Manual**: tasteaza km/tarif in app - calcul live in timp ce scrii
+          - Verde = profitabil, Galben = mediu, Rosu = neprofitabil
+          - Apasa pe overlay ca sa-l inchizi sau trage-l unde vrei
+
+          ## Istoric
+
+          Fiecare oferta e salvata in `/data/data/ro.profitride/files/offers.csv`
+          ''')
+
+          w('local.properties', f'sdk.dir={os.environ["ANDROID_HOME"]}')
+
+          w('gradle.properties', '''
+          android.useAndroidX=true
+          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+          ''')
+
+          w('settings.gradle', '''
+          pluginManagement {
+              repositories { google(); mavenCentral(); gradlePluginPortal() }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories { google(); mavenCentral() }
+          }
+          rootProject.name = "ProfitRide"
+          include ':app'
+          ''')
+
+          w('build.gradle', '''
+          plugins {
+              id 'com.android.application' version '8.2.2' apply false
+              id 'org.jetbrains.kotlin.android' version '1.9.22' apply false
+          }
+          ''')
+
+          w('app/build.gradle', '''
+          plugins {
+              id 'com.android.application'
+              id 'org.jetbrains.kotlin.android'
+          }
+          android {
+              namespace 'ro.profitride'
+              compileSdk 34
+              defaultConfig {
+                  applicationId "ro.profitride"
+                  minSdk 24
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.0"
+              }
+              buildTypes { release { minifyEnabled false } }
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+              kotlinOptions { jvmTarget = '17' }
+          }
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.11.0'
+              implementation 'androidx.core:core-ktx:1.12.0'
+          }
+          ''')
+
+          w('app/src/main/AndroidManifest.xml', '''
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+              <uses-permission android:name="android.permission.VIBRATE"/>
+
+              <queries>
+                  <intent>
+                      <action android:name="android.intent.action.TTS_SERVICE"/>
+                  </intent>
+              </queries>
+
+              <application
+                  android:allowBackup="true"
+                  android:icon="@android:drawable/sym_def_app_icon"
+                  android:label="ProfitRide"
+                  android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+                  <activity android:name=".SettingsActivity"/>
+                  <activity android:name=".SetupActivity"/>
+                  <service
+                      android:name=".OfferReader"
+                      android:exported="true"
+                      android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+                      <intent-filter>
+                          <action android:name="android.accessibilityservice.AccessibilityService"/>
+                      </intent-filter>
+                      <meta-data
+                          android:name="android.accessibilityservice"
+                          android:resource="@xml/accessibility_service_config"/>
+                  </service>
+              </application>
+          </manifest>
+          ''')
+
+          w('app/src/main/res/xml/accessibility_service_config.xml', '''
+          <?xml version="1.0" encoding="utf-8"?>
+          <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+              android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged"
+              android:accessibilityFeedbackType="feedbackGeneric"
+              android:accessibilityFlags="flagDefault"
+              android:canRetrieveWindowContent="true"
+              android:notificationTimeout="500"
+              android:description="@string/acc_desc"/>
+          ''')
+
+          w('app/src/main/res/values/strings.xml', '''
+          <resources>
+              <string name="app_name">ProfitRide</string>
+              <string name="acc_desc">Citeste ofertele Bolt/Uber pentru a calcula profitul curselor</string>
+          </resources>
+          ''')
+
+          w('app/src/main/res/layout/activity_main.xml', '''
+          <?xml version="1.0" encoding="utf-8"?>
+          <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent" android:layout_height="match_parent"
+              android:fillViewport="true">
+              <LinearLayout android:orientation="vertical"
+                  android:layout_width="match_parent" android:layout_height="wrap_content">
+
+                  <TextView android:id="@+id/tvStatus"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:background="#000000"
+                      android:paddingTop="18dp" android:paddingBottom="18dp"
+                      android:paddingLeft="16dp" android:paddingRight="16dp"
+                      android:gravity="center"
+                      android:textSize="16sp" android:textStyle="bold"
+                      android:textColor="#888888"
+                      android:text="Introdu datele cursei"/>
+
+                  <TextView android:id="@+id/tvConfig"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:padding="10dp" android:textSize="11sp"
+                      android:textColor="#555555" android:fontFamily="monospace"
+                      android:background="#F5F5F5" android:text=""/>
+
+                  <LinearLayout android:orientation="vertical" android:padding="16dp"
+                      android:layout_width="match_parent" android:layout_height="wrap_content">
+
+                      <TextView android:text="Km pana la preluare" android:textStyle="bold"
+                          android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                      <EditText android:id="@+id/etPickup" android:inputType="numberDecimal"
+                          android:hint="0.0" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+                      <TextView android:text="Km cursa (cu pasager)" android:textStyle="bold"
+                          android:layout_marginTop="8dp"
+                          android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                      <EditText android:id="@+id/etTrip" android:inputType="numberDecimal"
+                          android:hint="0.0" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+                      <TextView android:text="Tarif oferit (RON)" android:textStyle="bold"
+                          android:layout_marginTop="8dp"
+                          android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                      <EditText android:id="@+id/etPrice" android:inputType="numberDecimal"
+                          android:hint="0.0" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+                      <Button android:id="@+id/btnCalc" android:text="Calculeaza"
+                          android:layout_marginTop="12dp"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+                      <TextView android:id="@+id/tvResult" android:layout_marginTop="12dp"
+                          android:background="#000000" android:padding="14dp"
+                          android:textSize="13sp" android:fontFamily="monospace"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+                      <Button android:id="@+id/btnSettings" android:text="Setari costuri"
+                          android:layout_marginTop="20dp"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                      <Button android:id="@+id/btnAccessibility" android:text="Activeaza citirea automata"
+                          android:layout_marginTop="6dp"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                      <Button android:id="@+id/btnOverlay" android:text="Permite afisare peste alte aplicatii"
+                          android:layout_marginTop="6dp"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                      <Button android:id="@+id/btnSetup" android:text="Ghid instalare Honor"
+                          android:layout_marginTop="6dp"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  </LinearLayout>
+              </LinearLayout>
+          </ScrollView>
+          ''')
+
+          w('app/src/main/res/layout/activity_settings.xml', '''
+          <?xml version="1.0" encoding="utf-8"?>
+          <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent" android:layout_height="match_parent">
+              <LinearLayout android:orientation="vertical" android:padding="16dp"
+                  android:layout_width="match_parent" android:layout_height="wrap_content">
+                  <TextView android:text="Pret benzina (RON/L)" android:textStyle="bold"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <EditText android:id="@+id/etFuelPrice" android:inputType="numberDecimal"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  <TextView android:text="Consum (L/100km)" android:textStyle="bold" android:layout_marginTop="8dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <EditText android:id="@+id/etConsumption" android:inputType="numberDecimal"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  <TextView android:text="Comision platforma (%)" android:textStyle="bold" android:layout_marginTop="8dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <EditText android:id="@+id/etCommission" android:inputType="numberDecimal"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  <TextView android:text="Cost uzura (RON/km)" android:textStyle="bold" android:layout_marginTop="8dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <EditText android:id="@+id/etExtraCost" android:inputType="numberDecimal"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  <TextView android:text="Prag minim (RON/km)" android:textStyle="bold" android:layout_marginTop="8dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <EditText android:id="@+id/etMinPerKm" android:inputType="numberDecimal"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  <TextView android:text="Prag minim (RON/ora)" android:textStyle="bold" android:layout_marginTop="8dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <EditText android:id="@+id/etMinPerHour" android:inputType="numberDecimal"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  <TextView android:text="Viteza medie urbana (km/h)" android:textStyle="bold" android:layout_marginTop="8dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <EditText android:id="@+id/etAvgSpeed" android:inputType="numberDecimal"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  <TextView android:text="Return-km (% din cursa lunga)" android:textStyle="bold" android:layout_marginTop="8dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <EditText android:id="@+id/etReturnPercent" android:inputType="numberDecimal"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  <CheckBox android:id="@+id/cbVatPayer" android:text="Platitor TVA (+19% la comision)"
+                      android:layout_marginTop="8dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <CheckBox android:id="@+id/cbTtsEnabled" android:text="Anunt vocal (TTS ro-RO)"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <Button android:id="@+id/btnSave" android:text="Salveaza" android:layout_marginTop="16dp"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+              </LinearLayout>
+          </ScrollView>
+          ''')
+
+          w('app/src/main/res/layout/activity_setup.xml', '''
+          <?xml version="1.0" encoding="utf-8"?>
+          <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent" android:layout_height="match_parent">
+              <LinearLayout android:orientation="vertical" android:padding="16dp"
+                  android:layout_width="match_parent" android:layout_height="wrap_content">
+                  <TextView android:text="Ghid instalare Honor Magic 5"
+                      android:textSize="18sp" android:textStyle="bold"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <TextView android:text="MagicOS inchide agresiv serviciile de fundal. Fara acesti pasi, overlay-ul nu va aparea."
+                      android:layout_marginTop="6dp" android:textSize="12sp"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  <TextView android:text="1. Afisare peste alte aplicatii"
+                      android:textStyle="bold" android:textSize="15sp" android:layout_marginTop="20dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <TextView android:text="In app: butonul Permite afisare peste alte aplicatii"
+                      android:layout_marginTop="4dp" android:textSize="13sp"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  <TextView android:text="2. Serviciu de accesibilitate"
+                      android:textStyle="bold" android:textSize="15sp" android:layout_marginTop="18dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <TextView android:text="In app: butonul Activeaza citirea automata"
+                      android:layout_marginTop="4dp" android:textSize="13sp"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  <TextView android:text="3. Baterie fara restrictii (CRITIC)"
+                      android:textStyle="bold" android:textSize="15sp" android:layout_marginTop="18dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <TextView android:text="Setari -> Baterie -> Lansare aplicatii -> ProfitRide -> Gestioneaza manual. Bifeaza toate."
+                      android:layout_marginTop="4dp" android:textSize="13sp"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  <TextView android:text="4. Voce romana (TTS)"
+                      android:textStyle="bold" android:textSize="15sp" android:layout_marginTop="18dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <TextView android:text="Setari -> Limba -> Iesire text in vorbire -> Google TTS -> Romana"
+                      android:layout_marginTop="4dp" android:textSize="13sp"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+              </LinearLayout>
+          </ScrollView>
+          ''')
+
+          w('app/src/main/java/ro/profitride/OfferParser.kt', '''
+          package ro.profitride
+
+          import kotlin.math.abs
+
+          object OfferParser {
+
+              data class Offer(
+                  val priceRon: Float,
+                  val pickupKm: Float,
+                  val tripKm: Float,
+                  val pickupMinutes: Float?,
+                  val tripMinutes: Float?,
+                  val pickupEstimated: Boolean,
+                  val tripEstimated: Boolean
+              )
+
+              private val priceRe = Regex(
+                  """(\\d+(?:[.,]\\d+)?)\\s*(?:RON|lei)\\b(?!\\s*/\\s*km)""",
+                  RegexOption.IGNORE_CASE
+              )
+              private val minRe = Regex("""(\\d+(?:[.,]\\d+)?)\\s*min""", RegexOption.IGNORE_CASE)
+              private val kmRe  = Regex("""(\\d+(?:[.,]\\d+)?)\\s*km""",  RegexOption.IGNORE_CASE)
+
+              private val pickupWords = listOf("away", "depart", "pickup", "preluare", "la tine")
+              private val tripWords   = listOf("trip", "ride", "curs", "distan", "destina")
+
+              fun parse(text: String, avgSpeedKmh: Float = 25f): Offer? {
+                  val speed = if (avgSpeedKmh >= 5f) avgSpeedKmh else 25f
+
+                  val price = priceRe.findAll(text)
+                      .mapNotNull { it.groupValues[1].replace(',', '.').toFloatOrNull() }
+                      .filter { it in 1f..2000f }
+                      .maxOrNull() ?: return null
+
+                  fun ents(re: Regex): List<Pair<Float, Int>> =
+                      re.findAll(text).mapNotNull { m ->
+                          m.groupValues[1].replace(',', '.').toFloatOrNull()?.let { it to m.range.first }
+                      }.toList()
+
+                  val mins = ents(minRe)
+                  val kms  = ents(kmRe)
+                  if (mins.isEmpty() && kms.isEmpty()) return null
+
+                  val lower = text.lowercase()
+                  fun nearestWordDist(pos: Int, words: List<String>): Int {
+                      var best = Int.MAX_VALUE
+                      for (w in words) {
+                          var i = lower.indexOf(w)
+                          while (i >= 0) {
+                              val d = abs(i - pos)
+                              if (d < best) best = d
+                              i = lower.indexOf(w, i + 1)
+                          }
+                      }
+                      return best
+                  }
+                  fun classify(pos: Int): Int {
+                      val p = nearestWordDist(pos, pickupWords)
+                      val t = nearestWordDist(pos, tripWords)
+                      val hp = p <= 60
+                      val ht = t <= 60
+                      return when {
+                          hp && !ht -> 1
+                          ht && !hp -> 2
+                          hp && ht -> if (p <= t) 1 else 2
+                          else -> 0
+                      }
+                  }
+
+                  val pickupKms = kms.filter { classify(it.second) == 1 }.sortedBy { it.second }
+                  val tripKms   = kms.filter { classify(it.second) == 2 }.sortedBy { it.second }
+                  val unclass   = kms.filter { classify(it.second) == 0 }.sortedBy { it.second }
+
+                  var pickupKm: Pair<Float, Int>? = pickupKms.firstOrNull()
+                  var tripKm:   Pair<Float, Int>? = tripKms.firstOrNull()
+                  for (k in unclass) {
+                      if (pickupKm == null) { pickupKm = k; continue }
+                      if (tripKm == null)   { tripKm = k;   continue }
+                  }
+                  if (pickupKm != null && tripKm == null) {
+                      tripKm = pickupKm; pickupKm = null
+                  }
+
+                  val usedMins = mutableSetOf<Int>()
+                  fun attach(km: Pair<Float, Int>?): Float? {
+                      if (km == null) return null
+                      val cands = mins.filter { it.second !in usedMins }
+                      if (cands.isEmpty()) return null
+                      val best = cands.minByOrNull { abs(it.second - km.second) } ?: return null
+                      if (abs(best.second - km.second) > 100) return null
+                      usedMins.add(best.second)
+                      return best.first
+                  }
+                  var pickupMin = attach(pickupKm)
+                  var tripMin   = attach(tripKm)
+
+                  if (pickupKm == null || tripKm == null) {
+                      for (m in mins) {
+                          if (m.second in usedMins) continue
+                          when (classify(m.second)) {
+                              1 -> if (pickupKm == null && pickupMin == null) {
+                                  pickupMin = m.first; usedMins.add(m.second)
+                              }
+                              2 -> if (tripKm == null && tripMin == null) {
+                                  tripMin = m.first; usedMins.add(m.second)
+                              }
+                          }
+                      }
+                  }
+
+                  var pKm = pickupKm?.first ?: 0f
+                  var tKm = tripKm?.first   ?: 0f
+                  var pEst = false
+                  var tEst = false
+                  if (pKm == 0f && pickupMin != null) { pKm = pickupMin * speed / 60f; pEst = true }
+                  if (tKm == 0f && tripMin   != null) { tKm = tripMin   * speed / 60f; tEst = true }
+                  if (pKm == 0f && tKm == 0f) return null
+
+                  return Offer(price, pKm, tKm, pickupMin, tripMin, pEst, tEst)
+              }
+          }
+          ''')
+
+          w('app/src/main/java/ro/profitride/Calc.kt', '''
+          package ro.profitride
+
+          import android.content.Context
+          import android.graphics.Color
+
+          object Calc {
+              data class Result(
+                  val text: String,
+                  val color: Int,
+                  val profitPerKm: Float,
+                  val profitPerHour: Float,
+                  val speech: String
+              )
+
+              private val GREEN  = Color.parseColor("#4CAF50")
+              private val YELLOW = Color.parseColor("#FFEB3B")
+              private val RED    = Color.parseColor("#FF5252")
+
+              fun compute(ctx: Context, o: OfferParser.Offer): Result {
+                  val p = ctx.getSharedPreferences("cfg", Context.MODE_PRIVATE)
+                  val fuelPrice    = p.getFloat("fuelPrice", 7.5f)
+                  val consumption  = p.getFloat("consumption", 7f)
+                  val commission   = p.getFloat("commission", 20f)
+                  val extraPerKm   = p.getFloat("extraCost", 0.5f)
+                  val minPerKm     = p.getFloat("minPerKm", 2.5f)
+                  val minPerHour   = p.getFloat("minPerHour", 45f)
+                  val returnPct    = p.getFloat("returnPercent", 0f) / 100f
+                  val vatPayer     = p.getBoolean("vatPayer", false)
+                  val avgSpeed     = p.getFloat("avgSpeedKmh", 25f).let { if (it >= 5f) it else 25f }
+
+                  val returnKm = if (o.tripKm > 15f) o.tripKm * returnPct else 0f
+                  val totalKm  = o.pickupKm + o.tripKm + returnKm
+
+                  val commissionCut = o.priceRon * commission / 100f * (if (vatPayer) 1.19f else 1f)
+                  val fuelCost  = totalKm / 100f * consumption * fuelPrice
+                  val extraCost = totalKm * extraPerKm
+                  val net       = o.priceRon - commissionCut - fuelCost - extraCost
+                  val perKm     = if (totalKm > 0f) net / totalKm else 0f
+
+                  val totalMin = (o.pickupMinutes ?: (o.pickupKm / avgSpeed * 60f)) +
+                                 (o.tripMinutes   ?: (o.tripKm   / avgSpeed * 60f))
+                  val perHour = if (totalMin > 0f) net / (totalMin / 60f) else 0f
+
+                  val (label, color) = when {
+                      perHour >= minPerHour * 1.2f && perKm >= minPerKm -> "PROFITABIL"   to GREEN
+                      perHour >= minPerHour        && perKm >= minPerKm * 0.8f -> "MEDIU" to YELLOW
+                      else -> "NEPROFITABIL" to RED
+                  }
+
+                  val est = if (o.pickupEstimated || o.tripEstimated) " (est.)" else ""
+                  val pMinStr = o.pickupMinutes?.let { "${it.toInt()}min" } ?: "~"
+                  val tMinStr = o.tripMinutes?.let   { "${it.toInt()}min" } ?: "~"
+
+                  val text = """
+                      [%s]
+                      -----------------
+                      Preluare: %.1f km%s | %s
+                      Cursa:    %.1f km%s | %s
+                      Total:    %.1f km | %d min
+                      Tarif:    %.2f RON
+                      -----------------
+                      NET:     %.2f RON
+                      RON/km:  %.2f  (prag %.2f)
+                      RON/h:   %.0f  (prag %.0f)
+                  """.trimIndent().format(
+                      label,
+                      o.pickupKm, est, pMinStr,
+                      o.tripKm,   est, tMinStr,
+                      totalKm, totalMin.toInt(), o.priceRon,
+                      net, perKm, minPerKm, perHour, minPerHour
+                  )
+
+                  val speech = when (label) {
+                      "PROFITABIL" -> "Profitabil. ${perKm.toInt()} lei pe kilometru. ${perHour.toInt()} lei pe ora."
+                      "MEDIU"      -> "Cursa medie. ${perHour.toInt()} lei pe ora."
+                      else         -> "Neprofitabil."
+                  }
+                  return Result(text, color, perKm, perHour, speech)
+              }
+          }
+          ''')
+
+          w('app/src/main/java/ro/profitride/MainActivity.kt', '''
+          package ro.profitride
+
+          import android.content.Intent
+          import android.graphics.Color
+          import android.net.Uri
+          import android.os.Bundle
+          import android.os.Handler
+          import android.os.Looper
+          import android.provider.Settings
+          import android.text.Editable
+          import android.text.TextWatcher
+          import android.widget.Button
+          import android.widget.EditText
+          import android.widget.TextView
+          import android.widget.Toast
+          import androidx.appcompat.app.AppCompatActivity
+
+          class MainActivity : AppCompatActivity() {
+
+              private lateinit var etPickup: EditText
+              private lateinit var etTrip: EditText
+              private lateinit var etPrice: EditText
+              private lateinit var tvStatus: TextView
+              private lateinit var tvResult: TextView
+              private lateinit var tvConfig: TextView
+
+              private val handler = Handler(Looper.getMainLooper())
+              private val calcRunnable = Runnable { calculate() }
+              private var ignoreWatcher = false
+
+              private val watcher = object : TextWatcher {
+                  override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                  override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                      if (ignoreWatcher) return
+                      handler.removeCallbacks(calcRunnable)
+                      handler.postDelayed(calcRunnable, 250L)
+                  }
+                  override fun afterTextChanged(s: Editable?) {}
+              }
+
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  setContentView(R.layout.activity_main)
+
+                  etPickup = findViewById(R.id.etPickup)
+                  etTrip   = findViewById(R.id.etTrip)
+                  etPrice  = findViewById(R.id.etPrice)
+                  tvStatus = findViewById(R.id.tvStatus)
+                  tvResult = findViewById(R.id.tvResult)
+                  tvConfig = findViewById(R.id.tvConfig)
+
+                  etPickup.addTextChangedListener(watcher)
+                  etTrip.addTextChangedListener(watcher)
+                  etPrice.addTextChangedListener(watcher)
+
+                  findViewById<Button>(R.id.btnCalc).setOnClickListener { calculate() }
+                  findViewById<Button>(R.id.btnSettings).setOnClickListener {
+                      startActivity(Intent(this, SettingsActivity::class.java))
+                  }
+                  findViewById<Button>(R.id.btnSetup).setOnClickListener {
+                      startActivity(Intent(this, SetupActivity::class.java))
+                  }
+                  findViewById<Button>(R.id.btnAccessibility).setOnClickListener {
+                      if (!Settings.canDrawOverlays(this)) {
+                          Toast.makeText(this,
+                              "Acorda mai intai permisiunea Afisare peste alte aplicatii",
+                              Toast.LENGTH_LONG).show()
+                      }
+                      startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                  }
+                  findViewById<Button>(R.id.btnOverlay).setOnClickListener {
+                      startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                          Uri.parse("package:" + packageName)))
+                  }
+              }
+
+              override fun onResume() {
+                  super.onResume()
+                  updateConfigSummary()
+                  val offers = getSharedPreferences("offers", MODE_PRIVATE)
+                  if (offers.getBoolean("fresh", false)) {
+                      ignoreWatcher = true
+                      etPickup.setText(offers.getFloat("pickupKm", 0f).toString())
+                      etTrip.setText(offers.getFloat("tripKm", 0f).toString())
+                      etPrice.setText(offers.getFloat("price", 0f).toString())
+                      ignoreWatcher = false
+                      offers.edit().putBoolean("fresh", false).apply()
+                      calculate()
+                  }
+              }
+
+              private fun calculate() {
+                  val pp = etPickup.text.toString().toFloatOrNull() ?: 0f
+                  val t  = etTrip.text.toString().toFloatOrNull() ?: 0f
+                  val pr = etPrice.text.toString().toFloatOrNull() ?: 0f
+
+                  if (pp == 0f && t == 0f && pr == 0f) {
+                      tvStatus.text = "Introdu datele cursei"
+                      tvStatus.setTextColor(Color.parseColor("#888888"))
+                      tvResult.text = ""
+                      return
+                  }
+
+                  val offer = OfferParser.Offer(
+                      priceRon = pr, pickupKm = pp, tripKm = t,
+                      pickupMinutes = null, tripMinutes = null,
+                      pickupEstimated = false, tripEstimated = false
+                  )
+                  val r = Calc.compute(this, offer)
+                  tvStatus.text = r.text.substringBefore('\\n')
+                  tvStatus.setTextColor(r.color)
+                  tvResult.text = r.text
+                  tvResult.setTextColor(r.color)
+              }
+
+              private fun updateConfigSummary() {
+                  val p = getSharedPreferences("cfg", MODE_PRIVATE)
+                  tvConfig.text = "Prag: %.1f RON/km · %.0f RON/h  |  Benzina %.2f · %.1fL/100 · Com. %.0f%%"
+                      .format(
+                          p.getFloat("minPerKm", 2.5f),
+                          p.getFloat("minPerHour", 45f),
+                          p.getFloat("fuelPrice", 7.5f),
+                          p.getFloat("consumption", 7f),
+                          p.getFloat("commission", 20f)
+                      )
+              }
+
+              override fun onDestroy() {
+                  handler.removeCallbacks(calcRunnable)
+                  super.onDestroy()
+              }
+          }
+          ''')
+
+          w('app/src/main/java/ro/profitride/SettingsActivity.kt', '''
+          package ro.profitride
+
+          import android.os.Bundle
+          import android.widget.Button
+          import android.widget.CheckBox
+          import android.widget.EditText
+          import androidx.appcompat.app.AppCompatActivity
+
+          class SettingsActivity : AppCompatActivity() {
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  setContentView(R.layout.activity_settings)
+                  val p = getSharedPreferences("cfg", MODE_PRIVATE)
+
+                  val etFuel   = findViewById<EditText>(R.id.etFuelPrice)
+                  val etCons   = findViewById<EditText>(R.id.etConsumption)
+                  val etComm   = findViewById<EditText>(R.id.etCommission)
+                  val etExtra  = findViewById<EditText>(R.id.etExtraCost)
+                  val etMin    = findViewById<EditText>(R.id.etMinPerKm)
+                  val etMinH   = findViewById<EditText>(R.id.etMinPerHour)
+                  val etAvg    = findViewById<EditText>(R.id.etAvgSpeed)
+                  val etReturn = findViewById<EditText>(R.id.etReturnPercent)
+                  val cbVat    = findViewById<CheckBox>(R.id.cbVatPayer)
+                  val cbTts    = findViewById<CheckBox>(R.id.cbTtsEnabled)
+
+                  etFuel.setText(p.getFloat("fuelPrice", 7.5f).toString())
+                  etCons.setText(p.getFloat("consumption", 7f).toString())
+                  etComm.setText(p.getFloat("commission", 20f).toString())
+                  etExtra.setText(p.getFloat("extraCost", 0.5f).toString())
+                  etMin.setText(p.getFloat("minPerKm", 2.5f).toString())
+                  etMinH.setText(p.getFloat("minPerHour", 45f).toString())
+                  etAvg.setText(p.getFloat("avgSpeedKmh", 25f).toString())
+                  etReturn.setText(p.getFloat("returnPercent", 0f).toString())
+                  cbVat.isChecked = p.getBoolean("vatPayer", false)
+                  cbTts.isChecked = p.getBoolean("ttsEnabled", true)
+
+                  findViewById<Button>(R.id.btnSave).setOnClickListener {
+                      p.edit()
+                          .putFloat("fuelPrice",     etFuel.text.toString().toFloatOrNull() ?: 7.5f)
+                          .putFloat("consumption",   etCons.text.toString().toFloatOrNull() ?: 7f)
+                          .putFloat("commission",    etComm.text.toString().toFloatOrNull() ?: 20f)
+                          .putFloat("extraCost",     etExtra.text.toString().toFloatOrNull() ?: 0.5f)
+                          .putFloat("minPerKm",      etMin.text.toString().toFloatOrNull() ?: 2.5f)
+                          .putFloat("minPerHour",    etMinH.text.toString().toFloatOrNull() ?: 45f)
+                          .putFloat("avgSpeedKmh",   etAvg.text.toString().toFloatOrNull() ?: 25f)
+                          .putFloat("returnPercent", etReturn.text.toString().toFloatOrNull() ?: 0f)
+                          .putBoolean("vatPayer",    cbVat.isChecked)
+                          .putBoolean("ttsEnabled",  cbTts.isChecked)
+                          .apply()
+                      finish()
+                  }
+              }
+          }
+          ''')
+
+          w('app/src/main/java/ro/profitride/SetupActivity.kt', '''
+          package ro.profitride
+
+          import android.os.Bundle
+          import androidx.appcompat.app.AppCompatActivity
+
+          class SetupActivity : AppCompatActivity() {
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  setContentView(R.layout.activity_setup)
+              }
+          }
+          ''')
+
+          w('app/src/main/java/ro/profitride/OfferReader.kt', r'''
+          package ro.profitride
+
+          import android.accessibilityservice.AccessibilityService
+          import android.content.BroadcastReceiver
+          import android.content.Context
+          import android.content.Intent
+          import android.content.IntentFilter
+          import android.graphics.Color
+          import android.graphics.PixelFormat
+          import android.graphics.Typeface
+          import android.os.Build
+          import android.os.Handler
+          import android.os.Looper
+          import android.os.SystemClock
+          import android.os.VibrationEffect
+          import android.os.Vibrator
+          import android.os.VibratorManager
+          import android.speech.tts.TextToSpeech
+          import android.view.Gravity
+          import android.view.MotionEvent
+          import android.view.View
+          import android.view.WindowManager
+          import android.view.accessibility.AccessibilityEvent
+          import android.view.accessibility.AccessibilityNodeInfo
+          import android.widget.LinearLayout
+          import android.widget.TextView
+          import androidx.core.content.ContextCompat
+          import java.util.Locale
+
+          class OfferReader : AccessibilityService() {
+
+              private var overlay: View? = null
+              private lateinit var wm: WindowManager
+              private val handler = Handler(Looper.getMainLooper())
+              private val autoDismiss = Runnable { removeOverlay() }
+
+              private var tts: TextToSpeech? = null
+              private var vibrator: Vibrator? = null
+
+              private val sb = StringBuilder(2048)
+              private var lastParseAt = 0L
+              private var lastKey = ""
+
+              private val screenOff = object : BroadcastReceiver() {
+                  override fun onReceive(c: Context?, i: Intent?) {
+                      if (i?.action == Intent.ACTION_SCREEN_OFF) removeOverlay()
+                  }
+              }
+
+              override fun onServiceConnected() {
+                  super.onServiceConnected()
+                  wm = getSystemService(WINDOW_SERVICE) as WindowManager
+                  vibrator = if (Build.VERSION.SDK_INT >= 31)
+                      (getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
+                  else @Suppress("DEPRECATION") getSystemService(VIBRATOR_SERVICE) as Vibrator
+
+                  tts = TextToSpeech(this) { status ->
+                      if (status == TextToSpeech.SUCCESS) tts?.language = Locale("ro", "RO")
+                  }
+                  try {
+                      ContextCompat.registerReceiver(this, screenOff,
+                          IntentFilter(Intent.ACTION_SCREEN_OFF),
+                          ContextCompat.RECEIVER_NOT_EXPORTED)
+                  } catch (_: Exception) {}
+              }
+
+              override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+                  if (event == null) return
+
+                  val pkg = event.packageName?.toString()?.lowercase() ?: return
+                  if (!(pkg.contains("bolt") || pkg.contains("uber") || pkg.contains("free"))) return
+
+                  val now = SystemClock.elapsedRealtime()
+                  if (now - lastParseAt < 500L) return
+                  lastParseAt = now
+
+                  val root = rootInActiveWindow ?: return
+                  sb.setLength(0)
+                  collect(root, sb, 0)
+                  if (sb.isEmpty()) return
+
+                  val offer = OfferParser.parse(sb.toString(), avgSpeed()) ?: return
+                  val key = offer.priceRon.toString() + "|" + offer.pickupKm + "|" + offer.tripKm
+                  if (key == lastKey) return
+                  lastKey = key
+
+                  val result = Calc.compute(this, offer)
+
+                  getSharedPreferences("offers", Context.MODE_PRIVATE).edit()
+                      .putFloat("pickupKm", offer.pickupKm)
+                      .putFloat("tripKm", offer.tripKm)
+                      .putFloat("price", offer.priceRon)
+                      .putBoolean("fresh", true)
+                      .apply()
+
+                  try {
+                      openFileOutput("offers.csv", Context.MODE_APPEND).bufferedWriter().use {
+                          it.appendLine("" + System.currentTimeMillis() + "," +
+                              offer.priceRon + "," + offer.pickupKm + "," +
+                              offer.tripKm + "," + result.profitPerKm + "," + result.profitPerHour)
+                      }
+                  } catch (_: Exception) {}
+
+                  showOverlay(result)
+                  speak(result)
+                  vibrate(result.color)
+              }
+
+              private fun avgSpeed(): Float {
+                  val v = getSharedPreferences("cfg", MODE_PRIVATE).getFloat("avgSpeedKmh", 25f)
+                  return if (v >= 5f) v else 25f
+              }
+
+              private fun collect(node: AccessibilityNodeInfo?, sb: StringBuilder, depth: Int) {
+                  if (node == null || depth > 25 || sb.length > 8000) return
+                  node.text?.let { sb.append(it).append('\n') }
+                  node.contentDescription?.let { sb.append(it).append('\n') }
+                  for (i in 0 until node.childCount) collect(node.getChild(i), sb, depth + 1)
+              }
+
+              private fun speak(r: Calc.Result) {
+                  if (!getSharedPreferences("cfg", MODE_PRIVATE).getBoolean("ttsEnabled", true)) return
+                  tts?.speak(r.speech, TextToSpeech.QUEUE_FLUSH, null, "offer")
+              }
+
+              private fun vibrate(color: Int) {
+                  val v = vibrator ?: return
+                  val ms = when (color) {
+                      Color.parseColor("#4CAF50") -> 120L
+                      Color.parseColor("#FFEB3B") -> 250L
+                      else                        -> 500L
+                  }
+                  if (Build.VERSION.SDK_INT >= 26)
+                      v.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE))
+                  else @Suppress("DEPRECATION") v.vibrate(ms)
+              }
+
+              private fun showOverlay(r: Calc.Result) {
+                  removeOverlay()
+                  val container = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      setBackgroundColor(Color.BLACK)
+                      setPadding(30, 20, 30, 30)
+                      setOnTouchListener(dragListener())
+                  }
+                  val close = TextView(this).apply {
+                      text = "\u00d7"
+                      setTextColor(Color.WHITE)
+                      textSize = 20f
+                      gravity = Gravity.END
+                      setOnClickListener { removeOverlay() }
+                  }
+                  val body = TextView(this).apply {
+                      text = r.text
+                      setTextColor(r.color)
+                      textSize = 12f
+                      typeface = Typeface.MONOSPACE
+                  }
+                  container.addView(close)
+                  container.addView(body)
+
+                  val type = if (Build.VERSION.SDK_INT >= 26)
+                      WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                  else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
+
+                  val params = WindowManager.LayoutParams(
+                      WindowManager.LayoutParams.WRAP_CONTENT,
+                      WindowManager.LayoutParams.WRAP_CONTENT,
+                      type,
+                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                      PixelFormat.TRANSLUCENT
+                  ).apply { gravity = Gravity.TOP or Gravity.START; x = 20; y = 120 }
+
+                  try {
+                      wm.addView(container, params)
+                      overlay = container
+                      container.tag = params
+                      handler.postDelayed(autoDismiss, 20_000L)
+                  } catch (_: Exception) {}
+              }
+
+              private fun dragListener(): View.OnTouchListener {
+                  var startX = 0; var startY = 0
+                  var touchX = 0f; var touchY = 0f
+                  var moved = false
+                  return View.OnTouchListener { v, e ->
+                      val params = v.tag as? WindowManager.LayoutParams ?: return@OnTouchListener false
+                      when (e.action) {
+                          MotionEvent.ACTION_DOWN -> {
+                              startX = params.x; startY = params.y
+                              touchX = e.rawX; touchY = e.rawY
+                              moved = false; true
+                          }
+                          MotionEvent.ACTION_MOVE -> {
+                              val dx = (e.rawX - touchX).toInt()
+                              val dy = (e.rawY - touchY).toInt()
+                              if (dx * dx + dy * dy > 100) moved = true
+                              if (moved) {
+                                  params.x = startX + dx
+                                  params.y = startY + dy
+                                  try { wm.updateViewLayout(v, params) } catch (_: Exception) {}
+                              }
+                              true
+                          }
+                          MotionEvent.ACTION_UP -> {
+                              if (!moved) removeOverlay()
+                              true
+                          }
+                          else -> false
+                      }
+                  }
+              }
+
+              private fun removeOverlay() {
+                  handler.removeCallbacks(autoDismiss)
+                  overlay?.let { try { wm.removeView(it) } catch (_: Exception) {} }
+                  overlay = null
+              }
+
+              override fun onInterrupt() { removeOverlay() }
+
+              override fun onDestroy() {
+                  removeOverlay()
+                  try { unregisterReceiver(screenOff) } catch (_: Exception) {}
+                  tts?.stop(); tts?.shutdown(); tts = null
+                  super.onDestroy()
+              }
+          }
+          ''')
+          PYEOF
+
+      - name: Build debug APK
+        run: gradle assembleDebug --no-daemon --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ProfitRide-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
