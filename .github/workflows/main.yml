@@ -79,8 +79,8 @@ jobs:
                   applicationId "ro.profitride"
                   minSdk 24
                   targetSdk 34
-                  versionCode 15
-                  versionName "3.0"
+                  versionCode 16
+                  versionName "3.1"
               }
               buildTypes { release { minifyEnabled false } }
               compileOptions {
@@ -140,7 +140,7 @@ jobs:
           </manifest>
           ''')
 
-          # ICONITA 3D (Faux-3D cu umbre si gradienti)
+          # ICONITA 3D
           w('app/src/main/res/drawable/ic_car.xml', '''
           <vector xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:aapt="http://schemas.android.com/aapt"
@@ -149,7 +149,6 @@ jobs:
               android:viewportWidth="108"
               android:viewportHeight="108">
               
-              <!-- Fundal gradient -->
               <path android:pathData="M0,0h108v108h-108z">
                   <aapt:attr name="android:fillColor">
                       <gradient android:startX="0" android:startY="0" android:endX="108" android:endY="108" android:type="linear">
@@ -159,10 +158,8 @@ jobs:
                   </aapt:attr>
               </path>
 
-              <!-- Umbra masinii (3D shadow) -->
               <path android:fillColor="#33000000" android:pathData="M20,82 a34,6 0 1,0 68,0 a34,6 0 1,0 -68,0"/>
 
-              <!-- Caroserie Masina (Rosu cu gradient) -->
               <path android:pathData="M20,65 h68 v10 a5,5 0 0,1 -5,5 h-58 a5,5 0 0,1 -5,-5 z">
                   <aapt:attr name="android:fillColor">
                       <gradient android:startX="0" android:startY="65" android:endX="0" android:endY="80" android:type="linear">
@@ -180,19 +177,16 @@ jobs:
                   </aapt:attr>
               </path>
 
-              <!-- Geamuri (Gri inchis cu reflexie) -->
               <path android:fillColor="#1E1E1E" android:pathData="M35,48 h16 v12 h-22 z"/>
               <path android:fillColor="#1E1E1E" android:pathData="M56,48 h14 l7,12 h-21 z"/>
               <path android:fillColor="#55FFFFFF" android:pathData="M36,49 h14 v3 h-20 z"/>
               <path android:fillColor="#55FFFFFF" android:pathData="M57,49 h12 l3,3 h-15 z"/>
 
-              <!-- Roti 3D (Negru cu janta gri) -->
               <path android:fillColor="#111111" android:pathData="M35,80 m-10,0 a10,10 0 1,1 20,0 a10,10 0 1,1 -20,0"/>
               <path android:fillColor="#757575" android:pathData="M35,80 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0"/>
               <path android:fillColor="#111111" android:pathData="M73,80 m-10,0 a10,10 0 1,1 20,0 a10,10 0 1,1 -20,0"/>
               <path android:fillColor="#757575" android:pathData="M73,80 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0"/>
 
-              <!-- Semnul Dolar (Verde 3D cu umbra) -->
               <path android:strokeColor="#003300" android:strokeWidth="6" android:strokeLineCap="round" android:fillColor="#00000000" android:pathData="M56,54 v14 M50,57 h8 a2,2 0 0,1 0,4 h-4 a2,2 0 0,0 0,4 h8"/>
               <path android:strokeColor="#00E676" android:strokeWidth="4" android:strokeLineCap="round" android:fillColor="#00000000" android:pathData="M54,52 v14 M48,55 h8 a2,2 0 0,1 0,4 h-4 a2,2 0 0,0 0,4 h8"/>
           </vector>
@@ -216,7 +210,16 @@ jobs:
           </resources>
           ''')
 
-          # LAYOUT PRINCIPAL 3D
+          w('app/src/main/res/drawable/bg_gradient.xml', '''
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android">
+              <gradient
+                  android:startColor="#E3F2FD"
+                  android:endColor="#FFFFFF"
+                  android:angle="270" />
+          </shape>
+          ''')
+
           w('app/src/main/res/layout/activity_main.xml', '''
           <?xml version="1.0" encoding="utf-8"?>
           <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
@@ -241,7 +244,6 @@ jobs:
                   <LinearLayout android:orientation="vertical" android:padding="20dp"
                       android:layout_width="match_parent" android:layout_height="wrap_content">
 
-                      <!-- CARD 3D PENTRU INPUTURI -->
                       <com.google.android.material.card.MaterialCardView
                           android:layout_width="match_parent" android:layout_height="wrap_content"
                           app:cardCornerRadius="16dp" app:cardElevation="6dp"
@@ -354,15 +356,135 @@ jobs:
           </ScrollView>
           ''')
 
-          # FUNDAL GRADIENT
-          w('app/src/main/res/drawable/bg_gradient.xml', '''
+          # RUBRICA AUTOVEHICUL cu NOILE CAMPURI + RESET
+          w('app/src/main/res/layout/activity_vehicle.xml', '''
           <?xml version="1.0" encoding="utf-8"?>
-          <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <gradient
-                  android:startColor="#E3F2FD"
-                  android:endColor="#FFFFFF"
-                  android:angle="270" />
-          </shape>
+          <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
+              android:layout_width="match_parent" android:layout_height="match_parent"
+              android:background="@drawable/bg_gradient">
+              <LinearLayout android:orientation="vertical" android:padding="20dp"
+                  android:layout_width="match_parent" android:layout_height="wrap_content">
+                  
+                  <TextView android:text="Alerte Expirare"
+                      android:textSize="22sp" android:textStyle="bold" android:textColor="#333333"
+                      android:layout_marginBottom="20dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+
+                  <!-- RCA -->
+                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
+                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
+                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+                          <TextView android:text="RCA" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
+                          <EditText android:id="@+id/etRca" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                              android:inputType="none" android:background="@null" android:textStyle="bold"
+                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                      </LinearLayout>
+                  </com.google.android.material.card.MaterialCardView>
+
+                  <!-- RCA Persoane -->
+                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
+                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
+                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+                          <TextView android:text="RCA Persoane" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
+                          <EditText android:id="@+id/etRcaPersoane" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                              android:inputType="none" android:background="@null" android:textStyle="bold"
+                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                      </LinearLayout>
+                  </com.google.android.material.card.MaterialCardView>
+
+                  <!-- RCA Bagaje -->
+                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
+                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
+                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+                          <TextView android:text="RCA Bagaje" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
+                          <EditText android:id="@+id/etRcaBagaje" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                              android:inputType="none" android:background="@null" android:textStyle="bold"
+                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                      </LinearLayout>
+                  </com.google.android.material.card.MaterialCardView>
+
+                  <!-- ITP -->
+                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
+                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
+                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+                          <TextView android:text="ITP" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
+                          <EditText android:id="@+id/etItp" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                              android:inputType="none" android:background="@null" android:textStyle="bold"
+                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                      </LinearLayout>
+                  </com.google.android.material.card.MaterialCardView>
+
+                  <!-- Stingator -->
+                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
+                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
+                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+                          <TextView android:text="Stingător" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
+                          <EditText android:id="@+id/etStingator" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                              android:inputType="none" android:background="@null" android:textStyle="bold"
+                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                      </LinearLayout>
+                  </com.google.android.material.card.MaterialCardView>
+
+                  <!-- Trusa Medicala -->
+                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
+                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
+                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+                          <TextView android:text="Trusă Medicală" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
+                          <EditText android:id="@+id/etTrusa" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                              android:inputType="none" android:background="@null" android:textStyle="bold"
+                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                      </LinearLayout>
+                  </com.google.android.material.card.MaterialCardView>
+
+                  <!-- Copie Conforma (NOU) -->
+                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
+                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
+                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+                          <TextView android:text="Copie Conformă" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
+                          <EditText android:id="@+id/etCopieConforma" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                              android:inputType="none" android:background="@null" android:textStyle="bold"
+                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                      </LinearLayout>
+                  </com.google.android.material.card.MaterialCardView>
+
+                  <!-- Ecusoane (NOU) -->
+                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
+                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
+                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+                          <TextView android:text="Ecusoane" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
+                          <EditText android:id="@+id/etEcusoane" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                              android:inputType="none" android:background="@null" android:textStyle="bold"
+                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                      </LinearLayout>
+                  </com.google.android.material.card.MaterialCardView>
+
+                  <!-- Fisa Medicala (NOU) -->
+                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
+                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
+                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+                          <TextView android:text="Fișă Medicală" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
+                          <EditText android:id="@+id/etFisaMedicala" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                              android:inputType="none" android:background="@null" android:textStyle="bold"
+                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                      </LinearLayout>
+                  </com.google.android.material.card.MaterialCardView>
+
+                  <!-- BUTOANE SALVARE + RESET -->
+                  <LinearLayout android:orientation="horizontal" android:layout_marginTop="24dp"
+                      android:layout_width="match_parent" android:layout_height="wrap_content">
+                      <Button android:id="@+id/btnSaveVehicle" android:text="SALVEAZĂ"
+                          app:backgroundTint="#4CAF50" android:textColor="#FFFFFF" android:textStyle="bold"
+                          app:cornerRadius="24dp" android:elevation="6dp"
+                          android:layout_weight="1" android:layout_width="0dp" android:layout_height="wrap_content"/>
+                      <Button android:id="@+id/btnResetVehicle" android:text="RESET"
+                          app:backgroundTint="#F44336" android:textColor="#FFFFFF" android:textStyle="bold"
+                          app:cornerRadius="24dp" android:elevation="6dp"
+                          android:layout_marginLeft="12dp"
+                          android:layout_weight="1" android:layout_width="0dp" android:layout_height="wrap_content"/>
+                  </LinearLayout>
+              </LinearLayout>
+          </ScrollView>
           ''')
 
           w('app/src/main/res/layout/activity_summary.xml', '''
@@ -390,89 +512,6 @@ jobs:
                   app:cornerRadius="24dp" android:elevation="6dp"
                   android:layout_width="match_parent" android:layout_height="wrap_content"/>
           </LinearLayout>
-          ''')
-
-          w('app/src/main/res/layout/activity_vehicle.xml', '''
-          <?xml version="1.0" encoding="utf-8"?>
-          <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
-              android:layout_width="match_parent" android:layout_height="match_parent"
-              android:background="@drawable/bg_gradient">
-              <LinearLayout android:orientation="vertical" android:padding="20dp"
-                  android:layout_width="match_parent" android:layout_height="wrap_content">
-                  
-                  <TextView android:text="Alerte Expirare"
-                      android:textSize="22sp" android:textStyle="bold" android:textColor="#333333"
-                      android:layout_marginBottom="20dp"
-                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-
-                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
-                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
-                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-                          <TextView android:text="RCA" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
-                          <EditText android:id="@+id/etRca" android:focusable="false" android:clickable="true" android:hint="Alege data"
-                              android:inputType="none" android:background="@null" android:textStyle="bold"
-                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                      </LinearLayout>
-                  </com.google.android.material.card.MaterialCardView>
-
-                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
-                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
-                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-                          <TextView android:text="RCA Persoane" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
-                          <EditText android:id="@+id/etRcaPersoane" android:focusable="false" android:clickable="true" android:hint="Alege data"
-                              android:inputType="none" android:background="@null" android:textStyle="bold"
-                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                      </LinearLayout>
-                  </com.google.android.material.card.MaterialCardView>
-
-                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
-                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
-                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-                          <TextView android:text="RCA Bagaje" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
-                          <EditText android:id="@+id/etRcaBagaje" android:focusable="false" android:clickable="true" android:hint="Alege data"
-                              android:inputType="none" android:background="@null" android:textStyle="bold"
-                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                      </LinearLayout>
-                  </com.google.android.material.card.MaterialCardView>
-
-                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
-                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
-                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-                          <TextView android:text="ITP" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
-                          <EditText android:id="@+id/etItp" android:focusable="false" android:clickable="true" android:hint="Alege data"
-                              android:inputType="none" android:background="@null" android:textStyle="bold"
-                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                      </LinearLayout>
-                  </com.google.android.material.card.MaterialCardView>
-
-                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
-                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
-                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-                          <TextView android:text="Stingător" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
-                          <EditText android:id="@+id/etStingator" android:focusable="false" android:clickable="true" android:hint="Alege data"
-                              android:inputType="none" android:background="@null" android:textStyle="bold"
-                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                      </LinearLayout>
-                  </com.google.android.material.card.MaterialCardView>
-
-                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
-                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
-                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-                          <TextView android:text="Trusă Medicală" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
-                          <EditText android:id="@+id/etTrusa" android:focusable="false" android:clickable="true" android:hint="Alege data"
-                              android:inputType="none" android:background="@null" android:textStyle="bold"
-                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                      </LinearLayout>
-                  </com.google.android.material.card.MaterialCardView>
-
-                  <Button android:id="@+id/btnSaveVehicle" android:text="SALVEAZĂ DATELE"
-                      app:backgroundTint="#4CAF50" android:textColor="#FFFFFF" android:textStyle="bold"
-                      app:cornerRadius="24dp" android:elevation="6dp"
-                      android:layout_marginTop="24dp"
-                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
-              </LinearLayout>
-          </ScrollView>
           ''')
 
           w('app/src/main/res/layout/activity_settings.xml', '''
@@ -695,7 +734,6 @@ jobs:
           }
           ''')
 
-          # MAIN ACTIVITY cu ANIMATII 3D
           w('app/src/main/java/ro/profitride/MainActivity.kt', '''
           package ro.profitride
 
@@ -776,7 +814,6 @@ jobs:
                   etTrip.addTextChangedListener(watcher)
                   etPrice.addTextChangedListener(watcher)
 
-                  // Aplicam animatia 3D pe toate butoanele
                   val btnCalc = findViewById<Button>(R.id.btnCalc)
                   val btnSumZ = findViewById<Button>(R.id.btnSumarZilnic)
                   val btnSumS = findViewById<Button>(R.id.btnSumarSaptamanal)
@@ -837,7 +874,6 @@ jobs:
                   }
               }
 
-              // Funcția pentru animatia de apasare 3D
               private fun apply3DClick(button: View) {
                   button.setOnTouchListener { v, event ->
                       when (event.action) {
@@ -884,7 +920,6 @@ jobs:
                   tvResult.text = r.text
                   tvResult.setTextColor(r.color)
 
-                  // Animatie flash pe bara de sus
                   val colorAnimator = ValueAnimator.ofObject(ArgbEvaluator(), Color.parseColor("#111111"), r.color)
                   colorAnimator.duration = 300
                   colorAnimator.addUpdateListener { animator ->
@@ -900,6 +935,7 @@ jobs:
           }
           ''')
 
+          # VEHICLE ACTIVITY cu RESET
           w('app/src/main/java/ro/profitride/VehicleActivity.kt', '''
           package ro.profitride
 
@@ -928,7 +964,10 @@ jobs:
                       "rcaBag" to findViewById<EditText>(R.id.etRcaBagaje),
                       "itp" to findViewById<EditText>(R.id.etItp),
                       "stingator" to findViewById<EditText>(R.id.etStingator),
-                      "trusa" to findViewById<EditText>(R.id.etTrusa)
+                      "trusa" to findViewById<EditText>(R.id.etTrusa),
+                      "copie" to findViewById<EditText>(R.id.etCopieConforma),
+                      "ecusoane" to findViewById<EditText>(R.id.etEcusoane),
+                      "fisa" to findViewById<EditText>(R.id.etFisaMedicala)
                   )
 
                   for ((key, editText) in fields) {
@@ -943,6 +982,14 @@ jobs:
                   findViewById<Button>(R.id.btnSaveVehicle).setOnClickListener {
                       Toast.makeText(this, "Date salvate cu succes!", Toast.LENGTH_SHORT).show()
                       finish()
+                  }
+
+                  findViewById<Button>(R.id.btnResetVehicle).setOnClickListener {
+                      prefs.edit().clear().apply()
+                      for ((_, editText) in fields) {
+                          editText.setText("")
+                      }
+                      Toast.makeText(this, "Date resetate!", Toast.LENGTH_SHORT).show()
                   }
               }
 
@@ -970,6 +1017,7 @@ jobs:
           }
           ''')
 
+          # EXPIRY WORKER cu NOILE CAMPURI
           w('app/src/main/java/ro/profitride/ExpiryWorker.kt', '''
           package ro.profitride
 
@@ -992,7 +1040,10 @@ jobs:
                       "rcaBag" to "RCA Bagaje",
                       "itp" to "ITP",
                       "stingator" to "Stingător",
-                      "trusa" to "Trusă Medicală"
+                      "trusa" to "Trusă Medicală",
+                      "copie" to "Copie Conformă",
+                      "ecusoane" to "Ecusoane",
+                      "fisa" to "Fișă Medicală"
                   )
 
                   val today = Calendar.getInstance().apply {
@@ -1223,7 +1274,6 @@ jobs:
           }
           ''')
 
-          # OFFER READER cu OVERLAY 3D (Glassmorphism)
           w('app/src/main/java/ro/profitride/OfferReader.kt', r'''
           package ro.profitride
 
@@ -1464,20 +1514,19 @@ jobs:
                   bubbleView = null
               }
 
-              // OVERLAY 3D (GLASSMORPHISM)
               private fun showOverlay(r: Calc.Result) {
                   removeOverlay()
                   val container = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
                       
                       val bgDrawable = GradientDrawable().apply {
-                          setColor(Color.parseColor("#E6000000")) // Fundal intunecat semi-transparent
-                          cornerRadius = 50f // Colțuri foarte rotunjite
-                          setStroke(6, r.color) // Bordură colorată strălucitoare (verde/rosu/galben)
+                          setColor(Color.parseColor("#E6000000"))
+                          cornerRadius = 50f
+                          setStroke(6, r.color)
                       }
                       background = bgDrawable
                       setPadding(50, 40, 50, 40)
-                      elevation = 25f // Umbră 3D
+                      elevation = 25f
                       setOnTouchListener(dragListener())
                   }
                   val close = TextView(this).apply {
@@ -1492,7 +1541,7 @@ jobs:
                       setTextColor(r.color)
                       textSize = 20f
                       typeface = Typeface.DEFAULT_BOLD
-                      setShadowLayer(6f, 0f, 3f, Color.BLACK) // Umbră 3D pe text
+                      setShadowLayer(6f, 0f, 3f, Color.BLACK)
                   }
                   container.addView(close)
                   container.addView(body)
