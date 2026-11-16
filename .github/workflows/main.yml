@@ -79,8 +79,8 @@ jobs:
                   applicationId "ro.profitride"
                   minSdk 24
                   targetSdk 34
-                  versionCode 9
-                  versionName "2.3"
+                  versionCode 10
+                  versionName "2.4"
               }
               buildTypes { release { minifyEnabled false } }
               compileOptions {
@@ -121,6 +121,7 @@ jobs:
                   </activity>
                   <activity android:name=".SettingsActivity"/>
                   <activity android:name=".SetupActivity"/>
+                  <activity android:name=".SummaryActivity"/>
                   <service
                       android:name=".OfferReader"
                       android:exported="true"
@@ -171,6 +172,7 @@ jobs:
           </resources>
           ''')
 
+          # LAYOUT PRINCIPAL (Adaugat butoane sumar)
           w('app/src/main/res/layout/activity_main.xml', '''
           <?xml version="1.0" encoding="utf-8"?>
           <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
@@ -223,9 +225,27 @@ jobs:
                           android:textSize="16sp" android:fontFamily="monospace"
                           android:layout_width="match_parent" android:layout_height="wrap_content"/>
 
+                      <TextView android:text="Sumare" android:textStyle="bold" android:textSize="18sp"
+                          android:layout_marginTop="24dp" android:textColor="#333333"
+                          android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+
+                      <LinearLayout android:orientation="horizontal" android:layout_marginTop="8dp"
+                          android:layout_width="match_parent" android:layout_height="wrap_content">
+
+                          <Button android:id="@+id/btnSumarSaptamanal" android:text="Săptămânal"
+                              app:backgroundTint="#4CAF50" android:textColor="#FFFFFF" android:textStyle="bold"
+                              android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
+                          <Button android:id="@+id/btnSumarLunar" android:text="Lunar"
+                              app:backgroundTint="#FF9800" android:textColor="#FFFFFF" android:textStyle="bold"
+                              android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
+                          <Button android:id="@+id/btnSumarAnual" android:text="Anual"
+                              app:backgroundTint="#2196F3" android:textColor="#FFFFFF" android:textStyle="bold"
+                              android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
+                      </LinearLayout>
+
                       <Button android:id="@+id/btnSettings" android:text="Setări costuri"
                           app:backgroundTint="#2196F3" android:textColor="#FFFFFF" android:textStyle="bold"
-                          android:layout_marginTop="24dp"
+                          android:layout_marginTop="16dp"
                           android:layout_width="match_parent" android:layout_height="wrap_content"/>
                       <Button android:id="@+id/btnAccessibility" android:text="Activează citirea automată"
                           app:backgroundTint="#FF9800" android:textColor="#FFFFFF" android:textStyle="bold"
@@ -242,6 +262,27 @@ jobs:
                   </LinearLayout>
               </LinearLayout>
           </ScrollView>
+          ''')
+
+          # LAYOUT SUMAR
+          w('app/src/main/res/layout/activity_summary.xml', '''
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:orientation="vertical" android:padding="24dp"
+              android:background="#F0F4F8"
+              android:layout_width="match_parent" android:layout_height="match_parent">
+              
+              <TextView android:id="@+id/tvSummaryTitle"
+                  android:textSize="22sp" android:textStyle="bold" android:textColor="#333333"
+                  android:layout_width="match_parent" android:layout_height="wrap_content"
+                  android:layout_marginBottom="24dp"/>
+
+              <TextView android:id="@+id/tvSummaryContent"
+                  android:textSize="18sp" android:textColor="#111111" android:fontFamily="monospace"
+                  android:background="#FFFFFF" android:padding="20dp"
+                  android:lineSpacingExtra="8dp"
+                  android:layout_width="match_parent" android:layout_height="wrap_content"/>
+          </LinearLayout>
           ''')
 
           w('app/src/main/res/layout/activity_settings.xml', '''
@@ -393,6 +434,7 @@ jobs:
           }
           ''')
 
+          # CALCUL: Am adaugat totalExpenses si netProfit in Result
           w('app/src/main/java/ro/profitride/Calc.kt', '''
           package ro.profitride
 
@@ -400,7 +442,15 @@ jobs:
           import android.graphics.Color
 
           object Calc {
-              data class Result(val text: String, val color: Int, val profitPerKm: Float, val profitPerHour: Float, val speech: String)
+              data class Result(
+                  val text: String, 
+                  val color: Int, 
+                  val profitPerKm: Float, 
+                  val profitPerHour: Float,
+                  val totalExpenses: Float,
+                  val netProfit: Float,
+                  val speech: String
+              )
               private val GREEN  = Color.parseColor("#4CAF50")
               private val YELLOW = Color.parseColor("#FFEB3B")
               private val RED    = Color.parseColor("#FF5252")
@@ -450,11 +500,12 @@ jobs:
                       "MEDIU"      -> "Mediu. ${perHour.toInt()} lei pe ora."
                       else         -> "Neprofitabil."
                   }
-                  return Result(text, color, perKm, perHour, speech)
+                  return Result(text, color, perKm, perHour, totalExpenses, netProfit, speech)
               }
           }
           ''')
 
+          # MAIN ACTIVITY: Adaugat logica pentru butoanele de sumar
           w('app/src/main/java/ro/profitride/MainActivity.kt', '''
           package ro.profitride
 
@@ -510,6 +561,17 @@ jobs:
                   etPrice.addTextChangedListener(watcher)
 
                   findViewById<Button>(R.id.btnCalc).setOnClickListener { calculate() }
+                  
+                  findViewById<Button>(R.id.btnSumarSaptamanal).setOnClickListener { 
+                      startActivity(Intent(this, SummaryActivity::class.java).putExtra("PERIOADA", "WEEK")) 
+                  }
+                  findViewById<Button>(R.id.btnSumarLunar).setOnClickListener { 
+                      startActivity(Intent(this, SummaryActivity::class.java).putExtra("PERIOADA", "MONTH")) 
+                  }
+                  findViewById<Button>(R.id.btnSumarAnual).setOnClickListener { 
+                      startActivity(Intent(this, SummaryActivity::class.java).putExtra("PERIOADA", "YEAR")) 
+                  }
+
                   findViewById<Button>(R.id.btnSettings).setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
                   findViewById<Button>(R.id.btnAccessibility).setOnClickListener {
                       if (!Settings.canDrawOverlays(this)) Toast.makeText(this, "Acorda mai intai permisiunea Afisare peste alte aplicatii", Toast.LENGTH_LONG).show()
@@ -567,6 +629,71 @@ jobs:
               override fun onDestroy() {
                   handler.removeCallbacks(calcRunnable)
                   super.onDestroy()
+              }
+          }
+          ''')
+
+          # NOUL ACTIVITY PENTRU SUMAR
+          w('app/src/main/java/ro/profitride/SummaryActivity.kt', '''
+          package ro.profitride
+
+          import android.os.Bundle
+          import android.widget.TextView
+          import androidx.appcompat.app.AppCompatActivity
+
+          class SummaryActivity : AppCompatActivity() {
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  setContentView(R.layout.activity_summary)
+
+                  val period = intent.getStringExtra("PERIOADA") ?: "WEEK"
+                  val title = findViewById<TextView>(R.id.tvSummaryTitle)
+                  val content = findViewById<TextView>(R.id.tvSummaryContent)
+
+                  title.text = when(period) {
+                      "WEEK" -> "Sumar Săptămânal (Ultimele 7 zile)"
+                      "MONTH" -> "Sumar Lunar (Ultimele 30 zile)"
+                      "YEAR" -> "Sumar Anual (Ultimele 365 zile)"
+                      else -> "Sumar"
+                  }
+
+                  val (totalRevenue, totalExpenses, totalNet) = calculateSummary(period)
+
+                  content.text = """
+                      Total Încasări: %.2f RON
+                      Total Cheltuieli: %.2f RON
+                      ---------------------
+                      PROFIT NET: %.2f RON
+                  """.trimIndent().format(totalRevenue, totalExpenses, totalNet)
+              }
+
+              private fun calculateSummary(period: String): Triple<Float, Float, Float> {
+                  var rev = 0f; var exp = 0f; var net = 0f
+                  val now = System.currentTimeMillis()
+                  val limit = when(period) {
+                      "WEEK" -> now - 7L * 24 * 60 * 60 * 1000
+                      "MONTH" -> now - 30L * 24 * 60 * 60 * 1000
+                      "YEAR" -> now - 365L * 24 * 60 * 60 * 1000
+                      else -> 0L
+                  }
+
+                  try {
+                      openFileInput("offers.csv").bufferedReader().useLines { lines ->
+                          lines.forEach { line ->
+                              val parts = line.split(",")
+                              if (parts.size >= 8) {
+                                  val ts = parts[0].toLongOrNull() ?: 0L
+                                  if (ts >= limit) {
+                                      val price = parts[1].toFloatOrNull() ?: 0f
+                                      val e = parts[6].toFloatOrNull() ?: 0f
+                                      val n = parts[7].toFloatOrNull() ?: 0f
+                                      rev += price; exp += e; net += n
+                                  }
+                              }
+                          }
+                      }
+                  } catch (_: Exception) {}
+                  return Triple(rev, exp, net)
               }
           }
           ''')
@@ -635,7 +762,7 @@ jobs:
           }
           ''')
 
-          # AM ADAUGAT BULINTA IN OfferReader
+          # OFFER READER: Modificat sa salveze noile date (Cheltuieli, Profit Net) in CSV
           w('app/src/main/java/ro/profitride/OfferReader.kt', r'''
           package ro.profitride
 
@@ -672,7 +799,7 @@ jobs:
           class OfferReader : AccessibilityService() {
 
               private var overlay: View? = null
-              private var bubbleView: View? = null // BULINA
+              private var bubbleView: View? = null 
               private lateinit var wm: WindowManager
               private val handler = Handler(Looper.getMainLooper())
               private val autoDismiss = Runnable { removeOverlay() }
@@ -706,7 +833,6 @@ jobs:
                           ContextCompat.RECEIVER_NOT_EXPORTED)
                   } catch (_: Exception) {}
 
-                  // AFISAM BULINA CAND SERVICIUL E ACTIV
                   showBubble()
               }
 
@@ -730,7 +856,6 @@ jobs:
 
                   if (rawText.isEmpty()) return
 
-                  // Afiseaza doar cand e oferta activa (butoane de Accept)
                   if (!rawText.contains("Accept", ignoreCase = true) && !rawText.contains("Acceptă", ignoreCase = true)) {
                       return 
                   }
@@ -757,7 +882,8 @@ jobs:
                       openFileOutput("offers.csv", Context.MODE_APPEND).bufferedWriter().use {
                           it.appendLine("" + System.currentTimeMillis() + "," +
                               offer.priceRon + "," + offer.pickupKm + "," +
-                              offer.tripKm + "," + result.profitPerKm + "," + result.profitPerHour)
+                              offer.tripKm + "," + result.profitPerKm + "," + result.profitPerHour + "," +
+                              result.totalExpenses + "," + result.netProfit)
                       }
                   } catch (_: Exception) {}
 
@@ -795,7 +921,6 @@ jobs:
                   else @Suppress("DEPRECATION") v.vibrate(ms)
               }
 
-              // --- FUNCTII PENTRU BULINA ---
               private fun showBubble() {
                   if (bubbleView != null) return
                   
@@ -803,7 +928,7 @@ jobs:
                   val bubble = View(this).apply {
                       val drawable = GradientDrawable().apply {
                           shape = GradientDrawable.OVAL
-                          setColor(Color.parseColor("#80FF0000")) // Rosu semitransparent (50%)
+                          setColor(Color.parseColor("#80FF0000"))
                           setStroke((2 * resources.displayMetrics.density).toInt(), Color.RED)
                       }
                       background = drawable
@@ -859,7 +984,6 @@ jobs:
                   bubbleView?.let { try { wm.removeView(it) } catch (_: Exception) {} }
                   bubbleView = null
               }
-              // -----------------------------
 
               private fun showOverlay(r: Calc.Result) {
                   removeOverlay()
