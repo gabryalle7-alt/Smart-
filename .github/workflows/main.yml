@@ -79,8 +79,8 @@ jobs:
                   applicationId "ro.profitride"
                   minSdk 24
                   targetSdk 34
-                  versionCode 11
-                  versionName "2.5"
+                  versionCode 13
+                  versionName "2.7"
               }
               buildTypes { release { minifyEnabled false } }
               compileOptions {
@@ -172,7 +172,6 @@ jobs:
           </resources>
           ''')
 
-          # BUTOANE SUMAR - 4 BUTOANE (Zilnic, Săptămânal, Lunar, Anual)
           w('app/src/main/res/layout/activity_main.xml', '''
           <?xml version="1.0" encoding="utf-8"?>
           <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
@@ -261,12 +260,16 @@ jobs:
                           app:backgroundTint="#F44336" android:textColor="#FFFFFF"
                           android:layout_marginTop="8dp"
                           android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                          
+                      <Button android:id="@+id/btnStopAll" android:text="OPRIRE TOTALĂ APLICAȚIE"
+                          app:backgroundTint="#B71C1C" android:textColor="#FFFFFF" android:textStyle="bold"
+                          android:layout_marginTop="24dp"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
                   </LinearLayout>
               </LinearLayout>
           </ScrollView>
           ''')
 
-          # LAYOUT SUMAR - Adaugat buton RESET
           w('app/src/main/res/layout/activity_summary.xml', '''
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -512,7 +515,6 @@ jobs:
           }
           ''')
 
-          # MAIN ACTIVITY - 4 butoane de sumar
           w('app/src/main/java/ro/profitride/MainActivity.kt', '''
           package ro.profitride
 
@@ -602,10 +604,24 @@ jobs:
                           .setPositiveButton("OK", null)
                           .show()
                   }
+
+                  findViewById<Button>(R.id.btnStopAll).setOnClickListener {
+                      AlertDialog.Builder(this)
+                          .setTitle("Oprire Totală")
+                          .setMessage("Sigur vrei să oprești complet serviciul de citire? Pentru a-l porni din nou, va trebui să redeschizi aplicația.")
+                          .setPositiveButton("Da, oprește") { _, _ ->
+                              OfferReader.isStopped = true
+                              Toast.makeText(this, "Aplicația a fost oprită.", Toast.LENGTH_LONG).show()
+                              finish()
+                          }
+                          .setNegativeButton("Anulează", null)
+                          .show()
+                  }
               }
 
               override fun onResume() {
                   super.onResume()
+                  OfferReader.isStopped = false // Resetam starea cand aplicatia e deschisa
                   val offers = getSharedPreferences("offers", MODE_PRIVATE)
                   if (offers.getBoolean("fresh", false)) {
                       ignoreWatcher = true
@@ -643,7 +659,6 @@ jobs:
           }
           ''')
 
-          # SUMMARY ACTIVITY - Adaugat butonul de RESET si logica de timp exact
           w('app/src/main/java/ro/profitride/SummaryActivity.kt', '''
           package ro.profitride
 
@@ -829,6 +844,7 @@ jobs:
           }
           ''')
 
+          # OFFER READER: Salvare automata DOAR la finalizarea cursei + buton de oprire totala
           w('app/src/main/java/ro/profitride/OfferReader.kt', r'''
           package ro.profitride
 
@@ -864,6 +880,10 @@ jobs:
 
           class OfferReader : AccessibilityService() {
 
+              companion object {
+                  var isStopped = false
+              }
+
               private var overlay: View? = null
               private var bubbleView: View? = null 
               private lateinit var wm: WindowManager
@@ -876,6 +896,10 @@ jobs:
               private val sb = StringBuilder(2048)
               private var lastParseAt = 0L
               private var lastKey = ""
+
+              // Stocam oferta curenta pentru a o salva la finalul cursei
+              private var pendingOffer: OfferParser.Offer? = null
+              private var pendingResult: Calc.Result? = null
 
               private val screenOff = object : BroadcastReceiver() {
                   override fun onReceive(c: Context?, i: Intent?) {
@@ -899,10 +923,13 @@ jobs:
                           ContextCompat.RECEIVER_NOT_EXPORTED)
                   } catch (_: Exception) {}
 
-                  showBubble()
+                  if (!isStopped) {
+                      showBubble()
+                  }
               }
 
               override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+                  if (isStopped) return
                   if (event == null) return
 
                   val pkg = event.packageName?.toString()?.lowercase() ?: return
@@ -913,49 +940,64 @@ jobs:
                   if (now - lastParseAt < 500L) return
                   lastParseAt = now
 
-                  val root = rootInActiveWindow
-                  if (root == null) return
+                  val root = rootInActiveWindow ?: return
                   
                   sb.setLength(0)
                   collect(root, sb, 0)
-                  val rawText = sb.toString()
+                  val rawText = sb.toString().lowercase()
 
                   if (rawText.isEmpty()) return
 
-                  if (!rawText.contains("Accept", ignoreCase = true) && !rawText.contains("Acceptă", ignoreCase = true)) {
-                      return 
+                  // 1. DETECTARE OFERTA (AFISARE OVERLAY)
+                  if (rawText.contains("accept")) {
+                      val offer = OfferParser.parse(rawText, avgSpeed())
+                      if (offer != null) {
+                          val key = offer.priceRon.toString() + "|" + offer.pickupKm + "|" + offer.tripKm
+                          if (key != lastKey) {
+                              lastKey = key
+                              val result = Calc.compute(this, offer)
+                              
+                              // Salvam in memorie pentru mai tarziu
+                              pendingOffer = offer
+                              pendingResult = result
+
+                              showOverlay(result)
+                              speak(result)
+                              vibrate(result.color)
+                          }
+                      }
                   }
 
-                  val offer = OfferParser.parse(rawText, avgSpeed())
-                  if (offer == null) return
-                  
-                  val key = offer.priceRon.toString() + "|" + offer.pickupKm + "|" + offer.tripKm
-                  if (key == lastKey) return
-                  lastKey = key
+                  // 2. DETECTARE FINALIZARE CURSĂ (SALVARE IN SUMAR)
+                  val isFinished = rawText.contains("finalizează") || 
+                                   rawText.contains("finalizeaza") ||
+                                   rawText.contains("încheie") ||
+                                   rawText.contains("incheie") ||
+                                   rawText.contains("ați ajuns") ||
+                                   rawText.contains("ati ajuns") ||
+                                   rawText.contains("end trip") ||
+                                   rawText.contains("trip completed")
 
-                  if (!Settings.canDrawOverlays(this)) return
+                  if (isFinished && pendingOffer != null && pendingResult != null) {
+                      val offer = pendingOffer!!
+                      val result = pendingResult!!
 
-                  val result = Calc.compute(this, offer)
+                      try {
+                          openFileOutput("offers.csv", Context.MODE_APPEND).bufferedWriter().use {
+                              it.appendLine("" + System.currentTimeMillis() + "," +
+                                  offer.priceRon + "," + offer.pickupKm + "," +
+                                  offer.tripKm + "," + result.profitPerKm + "," + result.profitPerHour + "," +
+                                  result.totalExpenses + "," + result.netProfit)
+                          }
+                          handler.post {
+                              Toast.makeText(this, "Cursă finalizată! Salvată în sumar.", Toast.LENGTH_LONG).show()
+                          }
+                      } catch (_: Exception) {}
 
-                  getSharedPreferences("offers", Context.MODE_PRIVATE).edit()
-                      .putFloat("pickupKm", offer.pickupKm)
-                      .putFloat("tripKm", offer.tripKm)
-                      .putFloat("price", offer.priceRon)
-                      .putBoolean("fresh", true)
-                      .apply()
-
-                  try {
-                      openFileOutput("offers.csv", Context.MODE_APPEND).bufferedWriter().use {
-                          it.appendLine("" + System.currentTimeMillis() + "," +
-                              offer.priceRon + "," + offer.pickupKm + "," +
-                              offer.tripKm + "," + result.profitPerKm + "," + result.profitPerHour + "," +
-                              result.totalExpenses + "," + result.netProfit)
-                      }
-                  } catch (_: Exception) {}
-
-                  showOverlay(result)
-                  speak(result)
-                  vibrate(result.color)
+                      // Resetam oferta pending ca sa nu o salvam de mai multe ori
+                      pendingOffer = null
+                      pendingResult = null
+                  }
               }
 
               private fun avgSpeed(): Float {
@@ -989,7 +1031,6 @@ jobs:
 
               private fun showBubble() {
                   if (bubbleView != null) return
-                  
                   val sizePx = (56 * resources.displayMetrics.density).toInt()
                   val bubble = View(this).apply {
                       val drawable = GradientDrawable().apply {
@@ -1006,9 +1047,7 @@ jobs:
                   else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
 
                   val params = WindowManager.LayoutParams(
-                      sizePx,
-                      sizePx,
-                      type,
+                      sizePx, sizePx, type,
                       WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
                       PixelFormat.TRANSLUCENT
                   ).apply {
