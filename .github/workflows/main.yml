@@ -157,6 +157,7 @@ jobs:
           w('app/src/main/res/layout/activity_main.xml', '''
           <?xml version="1.0" encoding="utf-8"?>
           <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
               android:layout_width="match_parent" android:layout_height="match_parent"
               android:fillViewport="true" android:background="#F0F4F8">
               <LinearLayout android:orientation="vertical"
@@ -178,25 +179,25 @@ jobs:
                       <TextView android:text="Km pana la preluare" android:textStyle="bold" android:textColor="#333333"
                           android:layout_width="wrap_content" android:layout_height="wrap_content"/>
                       <EditText android:id="@+id/etPickup" android:inputType="numberDecimal"
-                          android:hint="0.0" android:backgroundTint="#2196F3"
+                          android:hint="0.0" app:backgroundTint="#2196F3"
                           android:layout_width="match_parent" android:layout_height="wrap_content"/>
 
                       <TextView android:text="Km cursa (cu pasager)" android:textStyle="bold" android:textColor="#333333"
                           android:layout_marginTop="12dp"
                           android:layout_width="wrap_content" android:layout_height="wrap_content"/>
                       <EditText android:id="@+id/etTrip" android:inputType="numberDecimal"
-                          android:hint="0.0" android:backgroundTint="#2196F3"
+                          android:hint="0.0" app:backgroundTint="#2196F3"
                           android:layout_width="match_parent" android:layout_height="wrap_content"/>
 
                       <TextView android:text="Tarif oferit (RON)" android:textStyle="bold" android:textColor="#333333"
                           android:layout_marginTop="12dp"
                           android:layout_width="wrap_content" android:layout_height="wrap_content"/>
                       <EditText android:id="@+id/etPrice" android:inputType="numberDecimal"
-                          android:hint="0.0" android:backgroundTint="#2196F3"
+                          android:hint="0.0" app:backgroundTint="#2196F3"
                           android:layout_width="match_parent" android:layout_height="wrap_content"/>
 
                       <Button android:id="@+id/btnCalc" android:text="CALCULEAZĂ"
-                          android:backgroundTint="#4CAF50" android:textColor="#FFFFFF" android:textStyle="bold"
+                          app:backgroundTint="#4CAF50" android:textColor="#FFFFFF" android:textStyle="bold"
                           android:layout_marginTop="20dp"
                           android:layout_width="match_parent" android:layout_height="wrap_content"/>
 
@@ -206,19 +207,19 @@ jobs:
                           android:layout_width="match_parent" android:layout_height="wrap_content"/>
 
                       <Button android:id="@+id/btnSettings" android:text="Setări costuri"
-                          android:backgroundTint="#2196F3" android:textColor="#FFFFFF" android:textStyle="bold"
+                          app:backgroundTint="#2196F3" android:textColor="#FFFFFF" android:textStyle="bold"
                           android:layout_marginTop="24dp"
                           android:layout_width="match_parent" android:layout_height="wrap_content"/>
                       <Button android:id="@+id/btnAccessibility" android:text="Activează citirea automată"
-                          android:backgroundTint="#FF9800" android:textColor="#FFFFFF" android:textStyle="bold"
+                          app:backgroundTint="#FF9800" android:textColor="#FFFFFF" android:textStyle="bold"
                           android:layout_marginTop="8dp"
                           android:layout_width="match_parent" android:layout_height="wrap_content"/>
                       <Button android:id="@+id/btnOverlay" android:text="Permite afișare peste alte aplicații"
-                          android:backgroundTint="#9C27B0" android:textColor="#FFFFFF" android:textStyle="bold"
+                          app:backgroundTint="#9C27B0" android:textColor="#FFFFFF" android:textStyle="bold"
                           android:layout_marginTop="8dp"
                           android:layout_width="match_parent" android:layout_height="wrap_content"/>
                       <Button android:id="@+id/btnDebug" android:text="Vezi textul citit (Debug)"
-                          android:backgroundTint="#F44336" android:textColor="#FFFFFF"
+                          app:backgroundTint="#F44336" android:textColor="#FFFFFF"
                           android:layout_marginTop="8dp"
                           android:layout_width="match_parent" android:layout_height="wrap_content"/>
                   </LinearLayout>
@@ -229,43 +230,78 @@ jobs:
           w('app/src/main/res/layout/activity_settings.xml', '''
           <?xml version="1.0" encoding="utf-8"?>
           <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
               android:layout_width="match_parent" android:layout_height="match_parent"
               android:background="#F0F4F8">
               <LinearLayout android:orientation="vertical" android:padding="20dp"
                   android:layout_width="match_parent" android:layout_height="wrap_content">
                   <TextView android:text="Preț benzină (RON/L)" android:textStyle="bold" android:textColor="#333333"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                  <EditText android:id="@+id/etFuelPrice" android:inputType="numberDecimal" android:backgroundTint="#4CAF50"
+                  <EditText android:id="@+id/etFuelPrice" android:inputType="numberDecimal" app:backgroundTint="#4CAF50"
                       android:layout_width="match_parent" android:layout_height="wrap_content"/>
                   <TextView android:text="Consum (L/100km)" android:textStyle="bold" android:textColor="#333333" android:layout_marginTop="12dp"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                  <EditText android:id="@+id/etConsumption" android:inputType="numberDecimal" android:backgroundTint="#4CAF50"
+                  <EditText android:id="@+id/etConsumption" android:inputType="numberDecimal" app:backgroundTint="#4CAF50"
                       android:layout_width="match_parent" android:layout_height="wrap_content"/>
                   <TextView android:text="Comision platformă (%)" android:textStyle="bold" android:textColor="#333333" android:layout_marginTop="12dp"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                  <EditText android:id="@+id/etCommission" android:inputType="numberDecimal" android:backgroundTint="#4CAF50"
+                  <EditText android:id="@+id/etCommission" android:inputType="numberDecimal" app:backgroundTint="#4CAF50"
                       android:layout_width="match_parent" android:layout_height="wrap_content"/>
                   <TextView android:text="Cost uzură (RON/km)" android:textStyle="bold" android:textColor="#333333" android:layout_marginTop="12dp"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                  <EditText android:id="@+id/etExtraCost" android:inputType="numberDecimal" android:backgroundTint="#4CAF50"
+                  <EditText android:id="@+id/etExtraCost" android:inputType="numberDecimal" app:backgroundTint="#4CAF50"
                       android:layout_width="match_parent" android:layout_height="wrap_content"/>
                   <TextView android:text="Prag minim (RON/km)" android:textStyle="bold" android:textColor="#333333" android:layout_marginTop="12dp"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                  <EditText android:id="@+id/etMinPerKm" android:inputType="numberDecimal" android:backgroundTint="#4CAF50"
+                  <EditText android:id="@+id/etMinPerKm" android:inputType="numberDecimal" app:backgroundTint="#4CAF50"
                       android:layout_width="match_parent" android:layout_height="wrap_content"/>
                   <TextView android:text="Prag minim (RON/oră)" android:textStyle="bold" android:textColor="#333333" android:layout_marginTop="12dp"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                  <EditText android:id="@+id/etMinPerHour" android:inputType="numberDecimal" android:backgroundTint="#4CAF50"
+                  <EditText android:id="@+id/etMinPerHour" android:inputType="numberDecimal" app:backgroundTint="#4CAF50"
                       android:layout_width="match_parent" android:layout_height="wrap_content"/>
                   <TextView android:text="Viteză medie (km/h)" android:textStyle="bold" android:textColor="#333333" android:layout_marginTop="12dp"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                  <EditText android:id="@+id/etAvgSpeed" android:inputType="numberDecimal" android:backgroundTint="#4CAF50"
+                  <EditText android:id="@+id/etAvgSpeed" android:inputType="numberDecimal" app:backgroundTint="#4CAF50"
                       android:layout_width="match_parent" android:layout_height="wrap_content"/>
                   <CheckBox android:id="@+id/cbTtsEnabled" android:text="Anunț vocal (TTS ro-RO)" android:textColor="#333333"
                       android:layout_marginTop="12dp"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                  <Button android:id="@+id/btnSave" android:text="SALVEAZĂ" android:backgroundTint="#4CAF50" android:textColor="#FFFFFF" android:textStyle="bold"
+                  <Button android:id="@+id/btnSave" android:text="SALVEAZĂ" app:backgroundTint="#4CAF50" android:textColor="#FFFFFF" android:textStyle="bold"
                       android:layout_marginTop="24dp"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+              </LinearLayout>
+          </ScrollView>
+          ''')
+
+          w('app/src/main/res/layout/activity_setup.xml', '''
+          <?xml version="1.0" encoding="utf-8"?>
+          <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="match_parent" android:layout_height="match_parent">
+              <LinearLayout android:orientation="vertical" android:padding="16dp"
+                  android:layout_width="match_parent" android:layout_height="wrap_content">
+                  <TextView android:text="Ghid instalare Honor Magic 5"
+                      android:textSize="18sp" android:textStyle="bold"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <TextView android:text="MagicOS inchide agresiv serviciile de fundal. Fara acesti pasi, overlay-ul nu va aparea."
+                      android:layout_marginTop="6dp" android:textSize="12sp"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  <TextView android:text="1. Afisare peste alte aplicatii"
+                      android:textStyle="bold" android:textSize="15sp" android:layout_marginTop="20dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <TextView android:text="In app: butonul Permite afisare peste alte aplicatii"
+                      android:layout_marginTop="4dp" android:textSize="13sp"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  <TextView android:text="2. Serviciu de accesibilitate"
+                      android:textStyle="bold" android:textSize="15sp" android:layout_marginTop="18dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <TextView android:text="In app: butonul Activeaza citirea automata"
+                      android:layout_marginTop="4dp" android:textSize="13sp"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  <TextView android:text="3. Baterie fara restrictii (CRITIC)"
+                      android:textStyle="bold" android:textSize="15sp" android:layout_marginTop="18dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <TextView android:text="Setari -> Baterie -> Lansare aplicatii -> ProfitRide -> Gestioneaza manual. Bifeaza toate."
+                      android:layout_marginTop="4dp" android:textSize="13sp"
                       android:layout_width="match_parent" android:layout_height="wrap_content"/>
               </LinearLayout>
           </ScrollView>
@@ -368,7 +404,6 @@ jobs:
                   val fuelCost      = totalKm / 100f * consumption * fuelPrice
                   val extraCost     = totalKm * extraPerKm
                   
-                  // CALCUL NOU: Cheltuieli totale si Profit net
                   val totalExpenses = commissionCut + fuelCost + extraCost
                   val netProfit     = o.priceRon - totalExpenses
                   
@@ -381,7 +416,6 @@ jobs:
                       else -> "NEPROFITABIL" to RED
                   }
 
-                  // FORMATARE NOUA PENTRU POP-UP
                   val text = """
                       [%s]
                       ---------------------
