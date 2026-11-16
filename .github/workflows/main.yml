@@ -79,8 +79,8 @@ jobs:
                   applicationId "ro.profitride"
                   minSdk 24
                   targetSdk 34
-                  versionCode 13
-                  versionName "2.7"
+                  versionCode 14
+                  versionName "2.8"
               }
               buildTypes { release { minifyEnabled false } }
               compileOptions {
@@ -93,6 +93,7 @@ jobs:
               implementation 'androidx.appcompat:appcompat:1.6.1'
               implementation 'com.google.android.material:material:1.11.0'
               implementation 'androidx.core:core-ktx:1.12.0'
+              implementation 'androidx.work:work-runtime-ktx:2.9.0'
           }
           ''')
 
@@ -101,6 +102,7 @@ jobs:
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
               <uses-permission android:name="android.permission.VIBRATE"/>
+              <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
               <queries>
                   <intent>
@@ -122,6 +124,7 @@ jobs:
                   <activity android:name=".SettingsActivity"/>
                   <activity android:name=".SetupActivity"/>
                   <activity android:name=".SummaryActivity"/>
+                  <activity android:name=".VehicleActivity"/>
                   <service
                       android:name=".OfferReader"
                       android:exported="true"
@@ -244,9 +247,13 @@ jobs:
                               android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
                       </LinearLayout>
 
+                      <Button android:id="@+id/btnVehicle" android:text="Rubrică Autovehicul"
+                          app:backgroundTint="#E91E63" android:textColor="#FFFFFF" android:textStyle="bold"
+                          android:layout_marginTop="16dp"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
                       <Button android:id="@+id/btnSettings" android:text="Setări costuri"
                           app:backgroundTint="#2196F3" android:textColor="#FFFFFF" android:textStyle="bold"
-                          android:layout_marginTop="16dp"
+                          android:layout_marginTop="8dp"
                           android:layout_width="match_parent" android:layout_height="wrap_content"/>
                       <Button android:id="@+id/btnAccessibility" android:text="Activează citirea automată"
                           app:backgroundTint="#FF9800" android:textColor="#FFFFFF" android:textStyle="bold"
@@ -294,6 +301,65 @@ jobs:
                   app:backgroundTint="#F44336" android:textColor="#FFFFFF" android:textStyle="bold"
                   android:layout_width="match_parent" android:layout_height="wrap_content"/>
           </LinearLayout>
+          ''')
+
+          # NOUL LAYOUT PENTRU AUTOVEHICUL
+          w('app/src/main/res/layout/activity_vehicle.xml', '''
+          <?xml version="1.0" encoding="utf-8"?>
+          <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
+              android:layout_width="match_parent" android:layout_height="match_parent"
+              android:background="#F0F4F8">
+              <LinearLayout android:orientation="vertical" android:padding="20dp"
+                  android:layout_width="match_parent" android:layout_height="wrap_content">
+                  
+                  <TextView android:text="Alerte Expirare Autovehicul"
+                      android:textSize="20sp" android:textStyle="bold" android:textColor="#333333"
+                      android:layout_marginBottom="20dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+
+                  <TextView android:text="RCA" android:textStyle="bold" android:textColor="#333333"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <EditText android:id="@+id/etRca" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                      android:inputType="none" app:backgroundTint="#E91E63"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+                  <TextView android:text="RCA Persoane" android:textStyle="bold" android:textColor="#333333" android:layout_marginTop="12dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <EditText android:id="@+id/etRcaPersoane" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                      android:inputType="none" app:backgroundTint="#E91E63"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+                  <TextView android:text="RCA Bagaje" android:textStyle="bold" android:textColor="#333333" android:layout_marginTop="12dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <EditText android:id="@+id/etRcaBagaje" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                      android:inputType="none" app:backgroundTint="#E91E63"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+                  <TextView android:text="ITP" android:textStyle="bold" android:textColor="#333333" android:layout_marginTop="12dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <EditText android:id="@+id/etItp" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                      android:inputType="none" app:backgroundTint="#E91E63"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+                  <TextView android:text="Stingător" android:textStyle="bold" android:textColor="#333333" android:layout_marginTop="12dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <EditText android:id="@+id/etStingator" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                      android:inputType="none" app:backgroundTint="#E91E63"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+                  <TextView android:text="Trusă Medicală" android:textStyle="bold" android:textColor="#333333" android:layout_marginTop="12dp"
+                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <EditText android:id="@+id/etTrusa" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                      android:inputType="none" app:backgroundTint="#E91E63"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+
+                  <Button android:id="@+id/btnSaveVehicle" android:text="SALVEAZĂ DATELE"
+                      app:backgroundTint="#4CAF50" android:textColor="#FFFFFF" android:textStyle="bold"
+                      android:layout_marginTop="24dp"
+                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+              </LinearLayout>
+          </ScrollView>
           ''')
 
           w('app/src/main/res/layout/activity_settings.xml', '''
@@ -518,10 +584,13 @@ jobs:
           w('app/src/main/java/ro/profitride/MainActivity.kt', '''
           package ro.profitride
 
+          import android.Manifest
           import android.app.AlertDialog
           import android.content.Intent
+          import android.content.pm.PackageManager
           import android.graphics.Color
           import android.net.Uri
+          import android.os.Build
           import android.os.Bundle
           import android.os.Handler
           import android.os.Looper
@@ -533,6 +602,12 @@ jobs:
           import android.widget.TextView
           import android.widget.Toast
           import androidx.appcompat.app.AppCompatActivity
+          import androidx.core.app.ActivityCompat
+          import androidx.core.content.ContextCompat
+          import androidx.work.ExistingPeriodicWorkPolicy
+          import androidx.work.PeriodicWorkRequestBuilder
+          import androidx.work.WorkManager
+          import java.util.concurrent.TimeUnit
 
           class MainActivity : AppCompatActivity() {
               private lateinit var etPickup: EditText
@@ -559,6 +634,21 @@ jobs:
                   super.onCreate(savedInstanceState)
                   setContentView(R.layout.activity_main)
 
+                  // Cerem permisiunea de notificari pe Android 13+
+                  if (Build.VERSION.SDK_INT >= 33) {
+                      if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                          ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
+                      }
+                  }
+
+                  // Pornim Worker-ul pentru verificarea expirarilor (o data pe zi)
+                  val workRequest = PeriodicWorkRequestBuilder<ExpiryWorker>(1, TimeUnit.DAYS).build()
+                  WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                      "ExpiryCheck",
+                      ExistingPeriodicWorkPolicy.KEEP,
+                      workRequest
+                  )
+
                   etPickup = findViewById(R.id.etPickup)
                   etTrip   = findViewById(R.id.etTrip)
                   etPrice  = findViewById(R.id.etPrice)
@@ -582,6 +672,10 @@ jobs:
                   }
                   findViewById<Button>(R.id.btnSumarAnual).setOnClickListener { 
                       startActivity(Intent(this, SummaryActivity::class.java).putExtra("PERIOADA", "YEAR")) 
+                  }
+
+                  findViewById<Button>(R.id.btnVehicle).setOnClickListener {
+                      startActivity(Intent(this, VehicleActivity::class.java))
                   }
 
                   findViewById<Button>(R.id.btnSettings).setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
@@ -655,6 +749,146 @@ jobs:
               override fun onDestroy() {
                   handler.removeCallbacks(calcRunnable)
                   super.onDestroy()
+              }
+          }
+          ''')
+
+          # VEHICLE ACTIVITY - Logica pentru salvarea datelor si DatePicker
+          w('app/src/main/java/ro/profitride/VehicleActivity.kt', '''
+          package ro.profitride
+
+          import android.app.DatePickerDialog
+          import android.os.Bundle
+          import android.widget.Button
+          import android.widget.EditText
+          import android.widget.Toast
+          import androidx.appcompat.app.AppCompatActivity
+          import java.text.SimpleDateFormat
+          import java.util.Calendar
+          import java.util.Locale
+
+          class VehicleActivity : AppCompatActivity() {
+              private lateinit var prefs: android.content.SharedPreferences
+              private val dateFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
+
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  setContentView(R.layout.activity_vehicle)
+                  prefs = getSharedPreferences("vehicle", MODE_PRIVATE)
+
+                  val fields = listOf(
+                      "rca" to findViewById<EditText>(R.id.etRca),
+                      "rcaPers" to findViewById<EditText>(R.id.etRcaPersoane),
+                      "rcaBag" to findViewById<EditText>(R.id.etRcaBagaje),
+                      "itp" to findViewById<EditText>(R.id.etItp),
+                      "stingator" to findViewById<EditText>(R.id.etStingator),
+                      "trusa" to findViewById<EditText>(R.id.etTrusa)
+                  )
+
+                  for ((key, editText) in fields) {
+                      val savedDate = prefs.getLong(key, 0L)
+                      if (savedDate > 0) {
+                          val cal = Calendar.getInstance().apply { timeInMillis = savedDate }
+                          editText.setText(dateFormat.format(cal.time))
+                      }
+                      editText.setOnClickListener { showDatePicker(key, editText) }
+                  }
+
+                  findViewById<Button>(R.id.btnSaveVehicle).setOnClickListener {
+                      Toast.makeText(this, "Date salvate cu succes!", Toast.LENGTH_SHORT).show()
+                      finish()
+                  }
+              }
+
+              private fun showDatePicker(key: String, editText: EditText) {
+                  val cal = Calendar.getInstance()
+                  val current = prefs.getLong(key, 0L)
+                  if (current > 0) cal.timeInMillis = current
+
+                  val dialog = DatePickerDialog(this, { _, year, month, day ->
+                      val newCal = Calendar.getInstance().apply {
+                          set(Calendar.YEAR, year)
+                          set(Calendar.MONTH, month)
+                          set(Calendar.DAY_OF_MONTH, day)
+                          set(Calendar.HOUR_OF_DAY, 0)
+                          set(Calendar.MINUTE, 0)
+                          set(Calendar.SECOND, 0)
+                      }
+                      prefs.edit().putLong(key, newCal.timeInMillis).apply()
+                      editText.setText(dateFormat.format(newCal.time))
+                  }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH))
+                  
+                  dialog.datePicker.minDate = System.currentTimeMillis() - 1000
+                  dialog.show()
+              }
+          }
+          ''')
+
+          # EXPIRY WORKER - Verifica zilnic datele si trimite notificari
+          w('app/src/main/java/ro/profitride/ExpiryWorker.kt', '''
+          package ro.profitride
+
+          import android.app.NotificationChannel
+          import android.app.NotificationManager
+          import android.content.Context
+          import android.os.Build
+          import androidx.core.app.NotificationCompat
+          import androidx.work.Worker
+          import androidx.work.WorkerParameters
+          import java.util.Calendar
+          import java.util.concurrent.TimeUnit
+
+          class ExpiryWorker(context: Context, workerParams: WorkerParameters) : Worker(context, workerParams) {
+              override fun doWork(): Result {
+                  val prefs = applicationContext.getSharedPreferences("vehicle", Context.MODE_PRIVATE)
+                  val items = mapOf(
+                      "rca" to "RCA",
+                      "rcaPers" to "RCA Persoane",
+                      "rcaBag" to "RCA Bagaje",
+                      "itp" to "ITP",
+                      "stingator" to "Stingător",
+                      "trusa" to "Trusă Medicală"
+                  )
+
+                  val today = Calendar.getInstance().apply {
+                      set(Calendar.HOUR_OF_DAY, 0)
+                      set(Calendar.MINUTE, 0)
+                      set(Calendar.SECOND, 0)
+                      set(Calendar.MILLISECOND, 0)
+                  }.timeInMillis
+
+                  for ((key, label) in items) {
+                      val expiry = prefs.getLong(key, 0L)
+                      if (expiry > 0) {
+                          val diff = expiry - today
+                          val days = TimeUnit.MILLISECONDS.toDays(diff)
+                          
+                          if (days == 30L || days == 15L || days == 10L || days == 3L) {
+                              sendNotification(label, days.toInt())
+                          }
+                      }
+                  }
+                  return Result.success()
+              }
+
+              private fun sendNotification(label: String, daysLeft: Int) {
+                  val channelId = "vehicle_alerts"
+                  val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                      val channel = NotificationChannel(channelId, "Alerte Autovehicul", NotificationManager.IMPORTANCE_HIGH)
+                      notificationManager.createNotificationChannel(channel)
+                  }
+
+                  val notification = NotificationCompat.Builder(applicationContext, channelId)
+                      .setSmallIcon(android.R.drawable.ic_dialog_alert)
+                      .setContentTitle("Atenție! $label expiră curând!")
+                      .setContentText("Mai ai $daysLeft zile până la expirarea documentului: $label.")
+                      .setPriority(NotificationCompat.PRIORITY_HIGH)
+                      .setAutoCancel(true)
+                      .build()
+
+                  notificationManager.notify(label.hashCode(), notification)
               }
           }
           ''')
@@ -844,7 +1078,6 @@ jobs:
           }
           ''')
 
-          # OFFER READER: Salvare automata DOAR la finalizarea cursei + buton de oprire totala
           w('app/src/main/java/ro/profitride/OfferReader.kt', r'''
           package ro.profitride
 
@@ -897,7 +1130,6 @@ jobs:
               private var lastParseAt = 0L
               private var lastKey = ""
 
-              // Stocam oferta curenta pentru a o salva la finalul cursei
               private var pendingOffer: OfferParser.Offer? = null
               private var pendingResult: Calc.Result? = null
 
@@ -948,7 +1180,6 @@ jobs:
 
                   if (rawText.isEmpty()) return
 
-                  // 1. DETECTARE OFERTA (AFISARE OVERLAY)
                   if (rawText.contains("accept")) {
                       val offer = OfferParser.parse(rawText, avgSpeed())
                       if (offer != null) {
@@ -957,7 +1188,6 @@ jobs:
                               lastKey = key
                               val result = Calc.compute(this, offer)
                               
-                              // Salvam in memorie pentru mai tarziu
                               pendingOffer = offer
                               pendingResult = result
 
@@ -968,7 +1198,6 @@ jobs:
                       }
                   }
 
-                  // 2. DETECTARE FINALIZARE CURSĂ (SALVARE IN SUMAR)
                   val isFinished = rawText.contains("finalizează") || 
                                    rawText.contains("finalizeaza") ||
                                    rawText.contains("încheie") ||
@@ -994,7 +1223,6 @@ jobs:
                           }
                       } catch (_: Exception) {}
 
-                      // Resetam oferta pending ca sa nu o salvam de mai multe ori
                       pendingOffer = null
                       pendingResult = null
                   }
