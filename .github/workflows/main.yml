@@ -79,8 +79,8 @@ jobs:
                   applicationId "ro.profitride"
                   minSdk 24
                   targetSdk 34
-                  versionCode 10
-                  versionName "2.4"
+                  versionCode 11
+                  versionName "2.5"
               }
               buildTypes { release { minifyEnabled false } }
               compileOptions {
@@ -172,7 +172,7 @@ jobs:
           </resources>
           ''')
 
-          # LAYOUT PRINCIPAL (Adaugat butoane sumar)
+          # BUTOANE SUMAR - 4 BUTOANE (Zilnic, Săptămânal, Lunar, Anual)
           w('app/src/main/res/layout/activity_main.xml', '''
           <?xml version="1.0" encoding="utf-8"?>
           <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
@@ -231,15 +231,17 @@ jobs:
 
                       <LinearLayout android:orientation="horizontal" android:layout_marginTop="8dp"
                           android:layout_width="match_parent" android:layout_height="wrap_content">
-
-                          <Button android:id="@+id/btnSumarSaptamanal" android:text="Săptămânal"
-                              app:backgroundTint="#4CAF50" android:textColor="#FFFFFF" android:textStyle="bold"
+                          <Button android:id="@+id/btnSumarZilnic" android:text="Zilnic"
+                              app:backgroundTint="#9C27B0" android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="12sp"
+                              android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
+                          <Button android:id="@+id/btnSumarSaptamanal" android:text="Săpt."
+                              app:backgroundTint="#4CAF50" android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="12sp"
                               android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
                           <Button android:id="@+id/btnSumarLunar" android:text="Lunar"
-                              app:backgroundTint="#FF9800" android:textColor="#FFFFFF" android:textStyle="bold"
+                              app:backgroundTint="#FF9800" android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="12sp"
                               android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
                           <Button android:id="@+id/btnSumarAnual" android:text="Anual"
-                              app:backgroundTint="#2196F3" android:textColor="#FFFFFF" android:textStyle="bold"
+                              app:backgroundTint="#2196F3" android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="12sp"
                               android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
                       </LinearLayout>
 
@@ -264,10 +266,11 @@ jobs:
           </ScrollView>
           ''')
 
-          # LAYOUT SUMAR
+          # LAYOUT SUMAR - Adaugat buton RESET
           w('app/src/main/res/layout/activity_summary.xml', '''
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:app="http://schemas.android.com/apk/res-auto"
               android:orientation="vertical" android:padding="24dp"
               android:background="#F0F4F8"
               android:layout_width="match_parent" android:layout_height="match_parent">
@@ -281,6 +284,11 @@ jobs:
                   android:textSize="18sp" android:textColor="#111111" android:fontFamily="monospace"
                   android:background="#FFFFFF" android:padding="20dp"
                   android:lineSpacingExtra="8dp"
+                  android:layout_width="match_parent" android:layout_height="wrap_content"
+                  android:layout_marginBottom="24dp"/>
+
+              <Button android:id="@+id/btnResetSummary" android:text="RESETEAZĂ DATELE PENTRU ACEASTĂ PERIOADĂ"
+                  app:backgroundTint="#F44336" android:textColor="#FFFFFF" android:textStyle="bold"
                   android:layout_width="match_parent" android:layout_height="wrap_content"/>
           </LinearLayout>
           ''')
@@ -434,7 +442,6 @@ jobs:
           }
           ''')
 
-          # CALCUL: Am adaugat totalExpenses si netProfit in Result
           w('app/src/main/java/ro/profitride/Calc.kt', '''
           package ro.profitride
 
@@ -505,7 +512,7 @@ jobs:
           }
           ''')
 
-          # MAIN ACTIVITY: Adaugat logica pentru butoanele de sumar
+          # MAIN ACTIVITY - 4 butoane de sumar
           w('app/src/main/java/ro/profitride/MainActivity.kt', '''
           package ro.profitride
 
@@ -562,6 +569,9 @@ jobs:
 
                   findViewById<Button>(R.id.btnCalc).setOnClickListener { calculate() }
                   
+                  findViewById<Button>(R.id.btnSumarZilnic).setOnClickListener { 
+                      startActivity(Intent(this, SummaryActivity::class.java).putExtra("PERIOADA", "DAY")) 
+                  }
                   findViewById<Button>(R.id.btnSumarSaptamanal).setOnClickListener { 
                       startActivity(Intent(this, SummaryActivity::class.java).putExtra("PERIOADA", "WEEK")) 
                   }
@@ -633,32 +643,58 @@ jobs:
           }
           ''')
 
-          # NOUL ACTIVITY PENTRU SUMAR
+          # SUMMARY ACTIVITY - Adaugat butonul de RESET si logica de timp exact
           w('app/src/main/java/ro/profitride/SummaryActivity.kt', '''
           package ro.profitride
 
+          import android.app.AlertDialog
           import android.os.Bundle
+          import android.widget.Button
           import android.widget.TextView
           import androidx.appcompat.app.AppCompatActivity
+          import java.util.Calendar
 
           class SummaryActivity : AppCompatActivity() {
+              
+              private lateinit var period: String
+              private lateinit var title: TextView
+              private lateinit var content: TextView
+              private lateinit var prefs: android.content.SharedPreferences
+
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
                   setContentView(R.layout.activity_summary)
 
-                  val period = intent.getStringExtra("PERIOADA") ?: "WEEK"
-                  val title = findViewById<TextView>(R.id.tvSummaryTitle)
-                  val content = findViewById<TextView>(R.id.tvSummaryContent)
+                  period = intent.getStringExtra("PERIOADA") ?: "WEEK"
+                  title = findViewById(R.id.tvSummaryTitle)
+                  content = findViewById(R.id.tvSummaryContent)
+                  prefs = getSharedPreferences("cfg", MODE_PRIVATE)
 
                   title.text = when(period) {
-                      "WEEK" -> "Sumar Săptămânal (Ultimele 7 zile)"
-                      "MONTH" -> "Sumar Lunar (Ultimele 30 zile)"
-                      "YEAR" -> "Sumar Anual (Ultimele 365 zile)"
+                      "DAY" -> "Sumar Zilnic (De azi)"
+                      "WEEK" -> "Sumar Săptămânal (De luni)"
+                      "MONTH" -> "Sumar Lunar (De luna aceasta)"
+                      "YEAR" -> "Sumar Anual (De anul acesta)"
                       else -> "Sumar"
                   }
 
-                  val (totalRevenue, totalExpenses, totalNet) = calculateSummary(period)
+                  loadSummary()
 
+                  findViewById<Button>(R.id.btnResetSummary).setOnClickListener {
+                      AlertDialog.Builder(this)
+                          .setTitle("Confirmare Reset")
+                          .setMessage("Sigur vrei să ștergi datele pentru această perioadă? (Această acțiune nu poate fi anulată)")
+                          .setPositiveButton("Da, șterge") { _, _ ->
+                              prefs.edit().putLong("reset_$period", System.currentTimeMillis()).apply()
+                              loadSummary()
+                          }
+                          .setNegativeButton("Anulează", null)
+                          .show()
+                  }
+              }
+
+              private fun loadSummary() {
+                  val (totalRevenue, totalExpenses, totalNet) = calculateSummary()
                   content.text = """
                       Total Încasări: %.2f RON
                       Total Cheltuieli: %.2f RON
@@ -667,15 +703,46 @@ jobs:
                   """.trimIndent().format(totalRevenue, totalExpenses, totalNet)
               }
 
-              private fun calculateSummary(period: String): Triple<Float, Float, Float> {
-                  var rev = 0f; var exp = 0f; var net = 0f
-                  val now = System.currentTimeMillis()
-                  val limit = when(period) {
-                      "WEEK" -> now - 7L * 24 * 60 * 60 * 1000
-                      "MONTH" -> now - 30L * 24 * 60 * 60 * 1000
-                      "YEAR" -> now - 365L * 24 * 60 * 60 * 1000
-                      else -> 0L
+              private fun getPeriodStartTime(): Long {
+                  val cal = Calendar.getInstance()
+                  when (period) {
+                      "DAY" -> {
+                          cal.set(Calendar.HOUR_OF_DAY, 0)
+                          cal.set(Calendar.MINUTE, 0)
+                          cal.set(Calendar.SECOND, 0)
+                          cal.set(Calendar.MILLISECOND, 0)
+                      }
+                      "WEEK" -> {
+                          cal.set(Calendar.DAY_OF_WEEK, cal.firstDayOfWeek)
+                          cal.set(Calendar.HOUR_OF_DAY, 0)
+                          cal.set(Calendar.MINUTE, 0)
+                          cal.set(Calendar.SECOND, 0)
+                          cal.set(Calendar.MILLISECOND, 0)
+                      }
+                      "MONTH" -> {
+                          cal.set(Calendar.DAY_OF_MONTH, 1)
+                          cal.set(Calendar.HOUR_OF_DAY, 0)
+                          cal.set(Calendar.MINUTE, 0)
+                          cal.set(Calendar.SECOND, 0)
+                          cal.set(Calendar.MILLISECOND, 0)
+                      }
+                      "YEAR" -> {
+                          cal.set(Calendar.DAY_OF_YEAR, 1)
+                          cal.set(Calendar.HOUR_OF_DAY, 0)
+                          cal.set(Calendar.MINUTE, 0)
+                          cal.set(Calendar.SECOND, 0)
+                          cal.set(Calendar.MILLISECOND, 0)
+                      }
                   }
+                  return cal.timeInMillis
+              }
+
+              private fun calculateSummary(): Triple<Float, Float, Float> {
+                  var rev = 0f; var exp = 0f; var net = 0f
+                  
+                  val periodStart = getPeriodStartTime()
+                  val resetTime = prefs.getLong("reset_$period", 0L)
+                  val effectiveStart = maxOf(periodStart, resetTime)
 
                   try {
                       openFileInput("offers.csv").bufferedReader().useLines { lines ->
@@ -683,7 +750,7 @@ jobs:
                               val parts = line.split(",")
                               if (parts.size >= 8) {
                                   val ts = parts[0].toLongOrNull() ?: 0L
-                                  if (ts >= limit) {
+                                  if (ts >= effectiveStart) {
                                       val price = parts[1].toFloatOrNull() ?: 0f
                                       val e = parts[6].toFloatOrNull() ?: 0f
                                       val n = parts[7].toFloatOrNull() ?: 0f
@@ -762,7 +829,6 @@ jobs:
           }
           ''')
 
-          # OFFER READER: Modificat sa salveze noile date (Cheltuieli, Profit Net) in CSV
           w('app/src/main/java/ro/profitride/OfferReader.kt', r'''
           package ro.profitride
 
