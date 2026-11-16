@@ -79,8 +79,8 @@ jobs:
                   applicationId "ro.profitride"
                   minSdk 24
                   targetSdk 34
-                  versionCode 7
-                  versionName "2.1"
+                  versionCode 9
+                  versionName "2.3"
               }
               buildTypes { release { minifyEnabled false } }
               compileOptions {
@@ -110,7 +110,7 @@ jobs:
 
               <application
                   android:allowBackup="true"
-                  android:icon="@android:drawable/sym_def_app_icon"
+                  android:icon="@drawable/ic_car"
                   android:label="ProfitRide"
                   android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
                   <activity android:name=".MainActivity" android:exported="true">
@@ -134,6 +134,23 @@ jobs:
                   </service>
               </application>
           </manifest>
+          ''')
+
+          w('app/src/main/res/drawable/ic_car.xml', '''
+          <vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="108dp"
+              android:height="108dp"
+              android:viewportWidth="108"
+              android:viewportHeight="108">
+              <path android:fillColor="#F5F5F5" android:pathData="M0,0h108v108h-108z"/>
+              <path android:fillColor="#D32F2F" android:pathData="M20,65 h68 v10 a5,5 0 0,1 -5,5 h-58 a5,5 0 0,1 -5,-5 z"/>
+              <path android:fillColor="#D32F2F" android:pathData="M30,45 h48 l12,20 h-72 z"/>
+              <path android:fillColor="#424242" android:pathData="M35,48 h16 v12 h-22 z"/>
+              <path android:fillColor="#424242" android:pathData="M56,48 h14 l7,12 h-21 z"/>
+              <path android:fillColor="#212121" android:pathData="M35,80 m-9,0 a9,9 0 1,1 18,0 a9,9 0 1,1 -18,0"/>
+              <path android:fillColor="#212121" android:pathData="M73,80 m-9,0 a9,9 0 1,1 18,0 a9,9 0 1,1 -18,0"/>
+              <path android:strokeColor="#00E676" android:strokeWidth="4" android:strokeLineCap="round" android:fillColor="#00000000" android:pathData="M54,52 v14 M48,55 h8 a2,2 0 0,1 0,4 h-4 a2,2 0 0,0 0,4 h8"/>
+          </vector>
           ''')
 
           w('app/src/main/res/xml/accessibility_service_config.xml', '''
@@ -618,6 +635,7 @@ jobs:
           }
           ''')
 
+          # AM ADAUGAT BULINTA IN OfferReader
           w('app/src/main/java/ro/profitride/OfferReader.kt', r'''
           package ro.profitride
 
@@ -629,6 +647,7 @@ jobs:
           import android.graphics.Color
           import android.graphics.PixelFormat
           import android.graphics.Typeface
+          import android.graphics.drawable.GradientDrawable
           import android.os.Build
           import android.os.Handler
           import android.os.Looper
@@ -653,6 +672,7 @@ jobs:
           class OfferReader : AccessibilityService() {
 
               private var overlay: View? = null
+              private var bubbleView: View? = null // BULINA
               private lateinit var wm: WindowManager
               private val handler = Handler(Looper.getMainLooper())
               private val autoDismiss = Runnable { removeOverlay() }
@@ -685,6 +705,9 @@ jobs:
                           IntentFilter(Intent.ACTION_SCREEN_OFF),
                           ContextCompat.RECEIVER_NOT_EXPORTED)
                   } catch (_: Exception) {}
+
+                  // AFISAM BULINA CAND SERVICIUL E ACTIV
+                  showBubble()
               }
 
               override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -706,6 +729,11 @@ jobs:
                   val rawText = sb.toString()
 
                   if (rawText.isEmpty()) return
+
+                  // Afiseaza doar cand e oferta activa (butoane de Accept)
+                  if (!rawText.contains("Accept", ignoreCase = true) && !rawText.contains("Acceptă", ignoreCase = true)) {
+                      return 
+                  }
 
                   val offer = OfferParser.parse(rawText, avgSpeed())
                   if (offer == null) return
@@ -766,6 +794,72 @@ jobs:
                       v.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE))
                   else @Suppress("DEPRECATION") v.vibrate(ms)
               }
+
+              // --- FUNCTII PENTRU BULINA ---
+              private fun showBubble() {
+                  if (bubbleView != null) return
+                  
+                  val sizePx = (56 * resources.displayMetrics.density).toInt()
+                  val bubble = View(this).apply {
+                      val drawable = GradientDrawable().apply {
+                          shape = GradientDrawable.OVAL
+                          setColor(Color.parseColor("#80FF0000")) // Rosu semitransparent (50%)
+                          setStroke((2 * resources.displayMetrics.density).toInt(), Color.RED)
+                      }
+                      background = drawable
+                      setOnTouchListener(bubbleDragListener())
+                  }
+
+                  val type = if (Build.VERSION.SDK_INT >= 26)
+                      WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                  else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
+
+                  val params = WindowManager.LayoutParams(
+                      sizePx,
+                      sizePx,
+                      type,
+                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                      PixelFormat.TRANSLUCENT
+                  ).apply {
+                      gravity = Gravity.TOP or Gravity.START
+                      x = 30
+                      y = 400
+                  }
+
+                  try {
+                      wm.addView(bubble, params)
+                      bubbleView = bubble
+                      bubble.tag = params
+                  } catch (_: Exception) {}
+              }
+
+              private fun bubbleDragListener(): View.OnTouchListener {
+                  var startX = 0; var startY = 0
+                  var touchX = 0f; var touchY = 0f
+                  return View.OnTouchListener { v, e ->
+                      val params = v.tag as? WindowManager.LayoutParams ?: return@OnTouchListener false
+                      when (e.action) {
+                          MotionEvent.ACTION_DOWN -> {
+                              startX = params.x; startY = params.y
+                              touchX = e.rawX; touchY = e.rawY
+                              true
+                          }
+                          MotionEvent.ACTION_MOVE -> {
+                              params.x = startX + (e.rawX - touchX).toInt()
+                              params.y = startY + (e.rawY - touchY).toInt()
+                              try { wm.updateViewLayout(v, params) } catch (_: Exception) {}
+                              true
+                          }
+                          else -> false
+                      }
+                  }
+              }
+
+              private fun removeBubble() {
+                  bubbleView?.let { try { wm.removeView(it) } catch (_: Exception) {} }
+                  bubbleView = null
+              }
+              // -----------------------------
 
               private fun showOverlay(r: Calc.Result) {
                   removeOverlay()
@@ -849,10 +943,14 @@ jobs:
                   overlay = null
               }
 
-              override fun onInterrupt() { removeOverlay() }
+              override fun onInterrupt() { 
+                  removeOverlay() 
+                  removeBubble()
+              }
 
               override fun onDestroy() {
                   removeOverlay()
+                  removeBubble()
                   try { unregisterReceiver(screenOff) } catch (_: Exception) {}
                   tts?.stop(); tts?.shutdown(); tts = null
                   super.onDestroy()
