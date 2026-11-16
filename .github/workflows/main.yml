@@ -79,8 +79,8 @@ jobs:
                   applicationId "ro.profitride"
                   minSdk 24
                   targetSdk 34
-                  versionCode 16
-                  versionName "3.1"
+                  versionCode 17
+                  versionName "3.2"
               }
               buildTypes { release { minifyEnabled false } }
               compileOptions {
@@ -97,6 +97,7 @@ jobs:
           }
           ''')
 
+          # Schimbat tema aici pentru a repara crash-ul
           w('app/src/main/AndroidManifest.xml', '''
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -114,7 +115,7 @@ jobs:
                   android:allowBackup="true"
                   android:icon="@drawable/ic_car"
                   android:label="ProfitRide"
-                  android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
+                  android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar">
                   <activity android:name=".MainActivity" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN"/>
@@ -140,53 +141,31 @@ jobs:
           </manifest>
           ''')
 
-          # ICONITA 3D
+          # Iconita 3D simplificata pentru a nu mai bloca telefonul
           w('app/src/main/res/drawable/ic_car.xml', '''
           <vector xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:aapt="http://schemas.android.com/aapt"
               android:width="108dp"
               android:height="108dp"
               android:viewportWidth="108"
               android:viewportHeight="108">
-              
-              <path android:pathData="M0,0h108v108h-108z">
-                  <aapt:attr name="android:fillColor">
-                      <gradient android:startX="0" android:startY="0" android:endX="108" android:endY="108" android:type="linear">
-                          <item android:offset="0" android:color="#E0E0E0"/>
-                          <item android:offset="1" android:color="#FFFFFF"/>
-                      </gradient>
-                  </aapt:attr>
-              </path>
-
+              <!-- Fundal Alb -->
+              <path android:fillColor="#F5F5F5" android:pathData="M0,0h108v108h-108z"/>
+              <!-- Umbra masinii -->
               <path android:fillColor="#33000000" android:pathData="M20,82 a34,6 0 1,0 68,0 a34,6 0 1,0 -68,0"/>
-
-              <path android:pathData="M20,65 h68 v10 a5,5 0 0,1 -5,5 h-58 a5,5 0 0,1 -5,-5 z">
-                  <aapt:attr name="android:fillColor">
-                      <gradient android:startX="0" android:startY="65" android:endX="0" android:endY="80" android:type="linear">
-                          <item android:offset="0" android:color="#F44336"/>
-                          <item android:offset="1" android:color="#B71C1C"/>
-                      </gradient>
-                  </aapt:attr>
-              </path>
-              <path android:pathData="M30,45 h48 l12,20 h-72 z">
-                  <aapt:attr name="android:fillColor">
-                      <gradient android:startX="0" android:startY="45" android:endX="0" android:endY="65" android:type="linear">
-                          <item android:offset="0" android:color="#FF5252"/>
-                          <item android:offset="1" android:color="#D32F2F"/>
-                      </gradient>
-                  </aapt:attr>
-              </path>
-
+              <!-- Caroserie Masina (Rosu) -->
+              <path android:fillColor="#D32F2F" android:pathData="M20,65 h68 v10 a5,5 0 0,1 -5,5 h-58 a5,5 0 0,1 -5,-5 z"/>
+              <path android:fillColor="#D32F2F" android:pathData="M30,45 h48 l12,20 h-72 z"/>
+              <!-- Geamuri -->
               <path android:fillColor="#1E1E1E" android:pathData="M35,48 h16 v12 h-22 z"/>
               <path android:fillColor="#1E1E1E" android:pathData="M56,48 h14 l7,12 h-21 z"/>
               <path android:fillColor="#55FFFFFF" android:pathData="M36,49 h14 v3 h-20 z"/>
               <path android:fillColor="#55FFFFFF" android:pathData="M57,49 h12 l3,3 h-15 z"/>
-
+              <!-- Roti -->
               <path android:fillColor="#111111" android:pathData="M35,80 m-10,0 a10,10 0 1,1 20,0 a10,10 0 1,1 -20,0"/>
               <path android:fillColor="#757575" android:pathData="M35,80 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0"/>
               <path android:fillColor="#111111" android:pathData="M73,80 m-10,0 a10,10 0 1,1 20,0 a10,10 0 1,1 -20,0"/>
               <path android:fillColor="#757575" android:pathData="M73,80 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0"/>
-
+              <!-- Semnul Dolar (Verde) -->
               <path android:strokeColor="#003300" android:strokeWidth="6" android:strokeLineCap="round" android:fillColor="#00000000" android:pathData="M56,54 v14 M50,57 h8 a2,2 0 0,1 0,4 h-4 a2,2 0 0,0 0,4 h8"/>
               <path android:strokeColor="#00E676" android:strokeWidth="4" android:strokeLineCap="round" android:fillColor="#00000000" android:pathData="M54,52 v14 M48,55 h8 a2,2 0 0,1 0,4 h-4 a2,2 0 0,0 0,4 h8"/>
           </vector>
@@ -356,7 +335,6 @@ jobs:
           </ScrollView>
           ''')
 
-          # RUBRICA AUTOVEHICUL cu NOILE CAMPURI + RESET
           w('app/src/main/res/layout/activity_vehicle.xml', '''
           <?xml version="1.0" encoding="utf-8"?>
           <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
@@ -371,7 +349,6 @@ jobs:
                       android:layout_marginBottom="20dp"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"/>
 
-                  <!-- RCA -->
                   <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
                       app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
                       <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
@@ -382,7 +359,6 @@ jobs:
                       </LinearLayout>
                   </com.google.android.material.card.MaterialCardView>
 
-                  <!-- RCA Persoane -->
                   <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
                       app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
                       <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
@@ -393,7 +369,6 @@ jobs:
                       </LinearLayout>
                   </com.google.android.material.card.MaterialCardView>
 
-                  <!-- RCA Bagaje -->
                   <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
                       app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
                       <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
@@ -404,7 +379,6 @@ jobs:
                       </LinearLayout>
                   </com.google.android.material.card.MaterialCardView>
 
-                  <!-- ITP -->
                   <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
                       app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
                       <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
@@ -415,7 +389,6 @@ jobs:
                       </LinearLayout>
                   </com.google.android.material.card.MaterialCardView>
 
-                  <!-- Stingator -->
                   <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
                       app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
                       <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
@@ -426,7 +399,6 @@ jobs:
                       </LinearLayout>
                   </com.google.android.material.card.MaterialCardView>
 
-                  <!-- Trusa Medicala -->
                   <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
                       app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
                       <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
@@ -437,7 +409,6 @@ jobs:
                       </LinearLayout>
                   </com.google.android.material.card.MaterialCardView>
 
-                  <!-- Copie Conforma (NOU) -->
                   <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
                       app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
                       <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
@@ -448,7 +419,6 @@ jobs:
                       </LinearLayout>
                   </com.google.android.material.card.MaterialCardView>
 
-                  <!-- Ecusoane (NOU) -->
                   <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
                       app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
                       <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
@@ -459,7 +429,6 @@ jobs:
                       </LinearLayout>
                   </com.google.android.material.card.MaterialCardView>
 
-                  <!-- Fisa Medicala (NOU) -->
                   <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
                       app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
                       <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
@@ -470,7 +439,6 @@ jobs:
                       </LinearLayout>
                   </com.google.android.material.card.MaterialCardView>
 
-                  <!-- BUTOANE SALVARE + RESET -->
                   <LinearLayout android:orientation="horizontal" android:layout_marginTop="24dp"
                       android:layout_width="match_parent" android:layout_height="wrap_content">
                       <Button android:id="@+id/btnSaveVehicle" android:text="SALVEAZĂ"
@@ -935,7 +903,6 @@ jobs:
           }
           ''')
 
-          # VEHICLE ACTIVITY cu RESET
           w('app/src/main/java/ro/profitride/VehicleActivity.kt', '''
           package ro.profitride
 
@@ -1017,7 +984,6 @@ jobs:
           }
           ''')
 
-          # EXPIRY WORKER cu NOILE CAMPURI
           w('app/src/main/java/ro/profitride/ExpiryWorker.kt', '''
           package ro.profitride
 
