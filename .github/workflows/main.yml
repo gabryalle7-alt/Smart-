@@ -79,8 +79,8 @@ jobs:
                   applicationId "ro.profitride"
                   minSdk 24
                   targetSdk 34
-                  versionCode 2
-                  versionName "1.1"
+                  versionCode 4
+                  versionName "1.3"
               }
               buildTypes { release { minifyEnabled false } }
               compileOptions {
@@ -139,9 +139,9 @@ jobs:
           w('app/src/main/res/xml/accessibility_service_config.xml', '''
           <?xml version="1.0" encoding="utf-8"?>
           <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-              android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged"
+              android:accessibilityEventTypes="typeAllMask"
               android:accessibilityFeedbackType="feedbackGeneric"
-              android:accessibilityFlags="flagDefault"
+              android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows"
               android:canRetrieveWindowContent="true"
               android:notificationTimeout="500"
               android:description="@string/acc_desc"/>
@@ -214,6 +214,10 @@ jobs:
                           android:layout_marginTop="6dp"
                           android:layout_width="match_parent" android:layout_height="wrap_content"/>
                       <Button android:id="@+id/btnOverlay" android:text="Permite afisare peste alte aplicatii"
+                          android:layout_marginTop="6dp"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                      <Button android:id="@+id/btnDebug" android:text="Vezi textul citit (Debug)"
+                          android:backgroundTint="#FF9800"
                           android:layout_marginTop="6dp"
                           android:layout_width="match_parent" android:layout_height="wrap_content"/>
                       <Button android:id="@+id/btnSetup" android:text="Ghid instalare Honor"
@@ -324,6 +328,7 @@ jobs:
               )
 
               private val priceRe = Regex("""(\\d+(?:[.,]\\d+)?)\\s*(?:RON|lei)\\b(?!\\s*/\\s*km)""", RegexOption.IGNORE_CASE)
+              private val fallbackPriceRe = Regex("""(\\d+(?:[.,]\\d+)?)(?!\\s*(?:km|min|RON|lei))""", RegexOption.IGNORE_CASE)
               private val minRe = Regex("""(\\d+(?:[.,]\\d+)?)\\s*min""", RegexOption.IGNORE_CASE)
               private val kmRe  = Regex("""(\\d+(?:[.,]\\d+)?)\\s*km""",  RegexOption.IGNORE_CASE)
 
@@ -332,11 +337,33 @@ jobs:
 
               fun parse(text: String, avgSpeedKmh: Float = 25f): Offer? {
                   val speed = if (avgSpeedKmh >= 5f) avgSpeedKmh else 25f
-                  val price = priceRe.findAll(text).mapNotNull { it.groupValues[1].replace(',', '.').toFloatOrNull() }.filter { it in 1f..2000f }.maxOrNull() ?: return null
+                  
+                  // 1. Caută prețul (cu RON/lei)
+                  var price = priceRe.findAll(text).mapNotNull { it.groupValues[1].replace(',', '.').toFloatOrNull() }.filter { it in 1f..2000f }.maxOrNull()
+                  
+                  // 2. Fallback: caută orice număr mare care nu e urmat de km/min
+                  if (price == null) {
+                      price = fallbackPriceRe.findAll(text)
+                          .filter { m ->
+                              val after = text.substring(m.range.last + 1).take(10).lowercase()
+                              !after.contains("km") && !after.contains("min")
+                          }
+                          .mapNotNull { it.groupValues[1].replace(',', '.').toFloatOrNull() }
+                          .filter { it in 5f..500f }
+                          .maxOrNull()
+                  }
+                  
+                  if (price == null) return null
+
                   fun ents(re: Regex): List<Pair<Float, Int>> = re.findAll(text).mapNotNull { m -> m.groupValues[1].replace(',', '.').toFloatOrNull()?.let { it to m.range.first } }.toList()
                   val mins = ents(minRe)
                   val kms  = ents(kmRe)
-                  if (mins.isEmpty() && kms.isEmpty()) return null
+                  
+                  // Dacă nu avem km/min, returnăm totuși oferta doar cu prețul!
+                  if (mins.isEmpty() && kms.isEmpty()) {
+                      return Offer(price, 0f, 0f, null, null, false, false)
+                  }
+                  
                   val lower = text.lowercase()
                   fun nearestWordDist(pos: Int, words: List<String>): Int {
                       var best = Int.MAX_VALUE
@@ -399,7 +426,7 @@ jobs:
                   var tEst = false
                   if (pKm == 0f && pickupMin != null) { pKm = pickupMin * speed / 60f; pEst = true }
                   if (tKm == 0f && tripMin   != null) { tKm = tripMin   * speed / 60f; tEst = true }
-                  if (pKm == 0f && tKm == 0f) return null
+                  
                   return Offer(price, pKm, tKm, pickupMin, tripMin, pEst, tEst)
               }
           }
@@ -439,31 +466,46 @@ jobs:
                   val totalMin = (o.pickupMinutes ?: (o.pickupKm / avgSpeed * 60f)) + (o.tripMinutes   ?: (o.tripKm   / avgSpeed * 60f))
                   val perHour = if (totalMin > 0f) net / (totalMin / 60f) else 0f
 
-                  val (label, color) = when {
-                      perHour >= minPerHour * 1.2f && perKm >= minPerKm -> "PROFITABIL"   to GREEN
-                      perHour >= minPerHour        && perKm >= minPerKm * 0.8f -> "MEDIU" to YELLOW
-                      else -> "NEPROFITABIL" to RED
+                  val (label, color) = if (totalKm == 0f) {
+                      "OFERTĂ CITITĂ" to YELLOW
+                  } else {
+                      when {
+                          perHour >= minPerHour * 1.2f && perKm >= minPerKm -> "PROFITABIL"   to GREEN
+                          perHour >= minPerHour        && perKm >= minPerKm * 0.8f -> "MEDIU" to YELLOW
+                          else -> "NEPROFITABIL" to RED
+                      }
                   }
+                  
                   val est = if (o.pickupEstimated || o.tripEstimated) " (est.)" else ""
                   val pMinStr = o.pickupMinutes?.let { "${it.toInt()}min" } ?: "~"
                   val tMinStr = o.tripMinutes?.let   { "${it.toInt()}min" } ?: "~"
 
-                  val text = """
-                      [%s]
-                      -----------------
-                      Preluare: %.1f km%s | %s
-                      Cursa:    %.1f km%s | %s
-                      Total:    %.1f km | %d min
-                      Tarif:    %.2f RON
-                      -----------------
-                      NET:     %.2f RON
-                      RON/km:  %.2f  (prag %.2f)
-                      RON/h:   %.0f  (prag %.0f)
-                  """.trimIndent().format(label, o.pickupKm, est, pMinStr, o.tripKm, est, tMinStr, totalKm, totalMin.toInt(), o.priceRon, net, perKm, minPerKm, perHour, minPerHour)
+                  val text = if (totalKm == 0f) {
+                      """
+                          [%s]
+                          -----------------
+                          Tarif: %.2f RON
+                          (Nu s-au gasit distantele)
+                      """.trimIndent().format(label, o.priceRon)
+                  } else {
+                      """
+                          [%s]
+                          -----------------
+                          Preluare: %.1f km%s | %s
+                          Cursa:    %.1f km%s | %s
+                          Total:    %.1f km | %d min
+                          Tarif:    %.2f RON
+                          -----------------
+                          NET:     %.2f RON
+                          RON/km:  %.2f  (prag %.2f)
+                          RON/h:   %.0f  (prag %.0f)
+                      """.trimIndent().format(label, o.pickupKm, est, pMinStr, o.tripKm, est, tMinStr, totalKm, totalMin.toInt(), o.priceRon, net, perKm, minPerKm, perHour, minPerHour)
+                  }
 
                   val speech = when (label) {
                       "PROFITABIL" -> "Profitabil. ${perKm.toInt()} lei pe kilometru. ${perHour.toInt()} lei pe ora."
                       "MEDIU"      -> "Cursa medie. ${perHour.toInt()} lei pe ora."
+                      "OFERTĂ CITITĂ" -> "Oferta citita. Tarif ${o.priceRon.toInt()} lei."
                       else         -> "Neprofitabil."
                   }
                   return Result(text, color, perKm, perHour, speech)
@@ -474,6 +516,7 @@ jobs:
           w('app/src/main/java/ro/profitride/MainActivity.kt', '''
           package ro.profitride
 
+          import android.app.AlertDialog
           import android.content.Intent
           import android.graphics.Color
           import android.net.Uri
@@ -535,6 +578,20 @@ jobs:
                   }
                   findViewById<Button>(R.id.btnOverlay).setOnClickListener {
                       startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + packageName)))
+                  }
+                  
+                  // Butonul de Debug
+                  findViewById<Button>(R.id.btnDebug).setOnClickListener {
+                      val debugContent = try {
+                          openFileInput("debug.txt").bufferedReader().use { it.readText() }
+                      } catch (e: Exception) {
+                          "Nu exista date. Deschide Bolt, asteapta o oferta, apoi revino aici."
+                      }
+                      AlertDialog.Builder(this)
+                          .setTitle("Ce a citit aplicatia:")
+                          .setMessage(debugContent.take(5000))
+                          .setPositiveButton("OK", null)
+                          .show()
                   }
               }
 
@@ -653,7 +710,6 @@ jobs:
           }
           ''')
 
-          # AICI AM FACUT MODIFICARILE PENTRU PACHETELE BOLT SI UBER + TOAST PENTRU TESTARE
           w('app/src/main/java/ro/profitride/OfferReader.kt', r'''
           package ro.profitride
 
@@ -672,6 +728,7 @@ jobs:
           import android.os.VibrationEffect
           import android.os.Vibrator
           import android.os.VibratorManager
+          import android.provider.Settings
           import android.speech.tts.TextToSpeech
           import android.view.Gravity
           import android.view.MotionEvent
@@ -720,14 +777,18 @@ jobs:
                           IntentFilter(Intent.ACTION_SCREEN_OFF),
                           ContextCompat.RECEIVER_NOT_EXPORTED)
                   } catch (_: Exception) {}
+                  
+                  try {
+                      openFileOutput("debug.txt", Context.MODE_APPEND).bufferedWriter().use {
+                          it.appendLine("--- Serviciu conectat la " + java.util.Date() + " ---")
+                      }
+                  } catch (_: Exception) {}
               }
 
               override fun onAccessibilityEvent(event: AccessibilityEvent?) {
                   if (event == null) return
 
                   val pkg = event.packageName?.toString()?.lowercase() ?: return
-                  
-                  // AICI AM ADAUGAT PACHETELE REALE ALE APLICATIILOR (mtakso = Bolt, ubercab = Uber)
                   val knownApps = listOf("bolt", "uber", "free", "mtakso", "ubercab", "clever", "taxi")
                   if (knownApps.none { pkg.contains(it) }) return
 
@@ -735,24 +796,44 @@ jobs:
                   if (now - lastParseAt < 500L) return
                   lastParseAt = now
 
-                  val root = rootInActiveWindow ?: return
-                  sb.setLength(0)
-                  collect(root, sb, 0)
-                  if (sb.isEmpty()) return
-
-                  val offer = OfferParser.parse(sb.toString(), avgSpeed())
-                  
-                  // MESAJ DE TEST: Daca serviciul citeste ecranul dar nu gaseste oferta, te anunta
-                  if (offer == null) {
-                      handler.post {
-                          Toast.makeText(this@OfferReader, "Serviciu activ! Aplicație detectată: " + pkg, Toast.LENGTH_SHORT).show()
-                      }
+                  val root = rootInActiveWindow
+                  if (root == null) {
+                      try {
+                          openFileOutput("debug.txt", Context.MODE_PRIVATE).bufferedWriter().use {
+                              it.write("Pachet: $pkg\nEROARE: rootInActiveWindow este NULL!\n")
+                          }
+                      } catch (_: Exception) {}
                       return
                   }
+                  
+                  sb.setLength(0)
+                  collect(root, sb, 0)
+                  val rawText = sb.toString()
+
+                  try {
+                      openFileOutput("debug.txt", Context.MODE_PRIVATE).bufferedWriter().use {
+                          it.write("Pachet: $pkg\n")
+                          it.write("Lungime text: " + rawText.length + "\n")
+                          it.write("--- TEXT BRUT ---\n")
+                          it.write(rawText)
+                      }
+                  } catch (_: Exception) {}
+                  
+                  if (rawText.isEmpty()) return
+
+                  val offer = OfferParser.parse(rawText, avgSpeed())
+                  if (offer == null) return
                   
                   val key = offer.priceRon.toString() + "|" + offer.pickupKm + "|" + offer.tripKm
                   if (key == lastKey) return
                   lastKey = key
+
+                  if (!Settings.canDrawOverlays(this)) {
+                      handler.post {
+                          Toast.makeText(this, "Nu pot afisa overlay! Lipseste permisiunea.", Toast.LENGTH_LONG).show()
+                      }
+                      return
+                  }
 
                   val result = Calc.compute(this, offer)
 
@@ -782,9 +863,9 @@ jobs:
               }
 
               private fun collect(node: AccessibilityNodeInfo?, sb: StringBuilder, depth: Int) {
-                  if (node == null || depth > 25 || sb.length > 8000) return
-                  node.text?.let { sb.append(it).append('\n') }
-                  node.contentDescription?.let { sb.append(it).append('\n') }
+                  if (node == null || depth > 40 || sb.length > 20000) return
+                  node.text?.toString()?.trim()?.let { if (it.isNotEmpty()) sb.append(it).append('\n') }
+                  node.contentDescription?.toString()?.trim()?.let { if (it.isNotEmpty()) sb.append(it).append('\n') }
                   for (i in 0 until node.childCount) collect(node.getChild(i), sb, depth + 1)
               }
 
@@ -846,7 +927,13 @@ jobs:
                       overlay = container
                       container.tag = params
                       handler.postDelayed(autoDismiss, 20_000L)
-                  } catch (_: Exception) {}
+                  } catch (e: Exception) {
+                      try {
+                          openFileOutput("debug.txt", Context.MODE_APPEND).bufferedWriter().use {
+                              it.appendLine("EROARE OVERLAY: ${e.message}")
+                          }
+                      } catch (_: Exception) {}
+                  }
               }
 
               private fun dragListener(): View.OnTouchListener {
