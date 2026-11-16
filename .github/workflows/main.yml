@@ -36,138 +36,81 @@ jobs:
               with open(path, 'w', encoding='utf-8') as f:
                   f.write(text.strip() + '\n')
 
-          w('README.md', '''
-          # ProfitRide
-          Aplicatie pentru calculat profitul curselor.
-          ''')
-
+          w('README.md', '# ProfitRide\nAplicatie pentru calculat profitul curselor.')
           w('local.properties', f'sdk.dir={os.environ["ANDROID_HOME"]}')
-
-          w('gradle.properties', '''
-          android.useAndroidX=true
-          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
-          ''')
-
+          w('gradle.properties', 'android.useAndroidX=true\norg.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8')
           w('settings.gradle', '''
-          pluginManagement {
-              repositories { google(); mavenCentral(); gradlePluginPortal() }
-          }
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories { google(); mavenCentral() }
-          }
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
           rootProject.name = "ProfitRide"
           include ':app'
           ''')
-
-          w('build.gradle', '''
-          plugins {
-              id 'com.android.application' version '8.2.2' apply false
-              id 'org.jetbrains.kotlin.android' version '1.9.22' apply false
-          }
-          ''')
-
+          w('build.gradle', 'plugins { id "com.android.application" version "8.2.2" apply false\n id "org.jetbrains.kotlin.android" version "1.9.22" apply false }')
           w('app/build.gradle', '''
-          plugins {
-              id 'com.android.application'
-              id 'org.jetbrains.kotlin.android'
-          }
+          plugins { id 'com.android.application'; id 'org.jetbrains.kotlin.android' }
           android {
-              namespace 'ro.profitride'
-              compileSdk 34
-              defaultConfig {
-                  applicationId "ro.profitride"
-                  minSdk 24
-                  targetSdk 34
-                  versionCode 17
-                  versionName "3.2"
-              }
+              namespace 'ro.profitride'; compileSdk 34
+              defaultConfig { applicationId "ro.profitride"; minSdk 24; targetSdk 34; versionCode 19; versionName "3.4" }
               buildTypes { release { minifyEnabled false } }
-              compileOptions {
-                  sourceCompatibility JavaVersion.VERSION_17
-                  targetCompatibility JavaVersion.VERSION_17
-              }
+              compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
               kotlinOptions { jvmTarget = '17' }
           }
           dependencies {
               implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'com.google.android.material:material:1.11.0'
               implementation 'androidx.core:core-ktx:1.12.0'
               implementation 'androidx.work:work-runtime-ktx:2.9.0'
           }
           ''')
 
-          # Schimbat tema aici pentru a repara crash-ul
           w('app/src/main/AndroidManifest.xml', '''
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
               <uses-permission android:name="android.permission.VIBRATE"/>
               <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
-              <queries>
-                  <intent>
-                      <action android:name="android.intent.action.TTS_SERVICE"/>
-                  </intent>
-              </queries>
-
+              <queries><intent><action android:name="android.intent.action.TTS_SERVICE"/></intent></queries>
               <application
                   android:allowBackup="true"
                   android:icon="@drawable/ic_car"
                   android:label="ProfitRide"
-                  android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar">
+                  android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
                   <activity android:name=".MainActivity" android:exported="true">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN"/>
-                          <category android:name="android.intent.category.LAUNCHER"/>
-                      </intent-filter>
+                      <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter>
                   </activity>
                   <activity android:name=".SettingsActivity"/>
                   <activity android:name=".SetupActivity"/>
                   <activity android:name=".SummaryActivity"/>
                   <activity android:name=".VehicleActivity"/>
-                  <service
-                      android:name=".OfferReader"
-                      android:exported="true"
-                      android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
-                      <intent-filter>
-                          <action android:name="android.accessibilityservice.AccessibilityService"/>
-                      </intent-filter>
-                      <meta-data
-                          android:name="android.accessibilityservice"
-                          android:resource="@xml/accessibility_service_config"/>
+                  <service android:name=".OfferReader" android:exported="true" android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+                      <intent-filter><action android:name="android.accessibilityservice.AccessibilityService"/></intent-filter>
+                      <meta-data android:name="android.accessibilityservice" android:resource="@xml/accessibility_service_config"/>
                   </service>
               </application>
           </manifest>
           ''')
 
-          # Iconita 3D simplificata pentru a nu mai bloca telefonul
+          # ICONITA 3D ROTUNJITA (fara gradiente, doar straturi solide)
           w('app/src/main/res/drawable/ic_car.xml', '''
           <vector xmlns:android="http://schemas.android.com/apk/res/android"
-              android:width="108dp"
-              android:height="108dp"
-              android:viewportWidth="108"
-              android:viewportHeight="108">
-              <!-- Fundal Alb -->
-              <path android:fillColor="#F5F5F5" android:pathData="M0,0h108v108h-108z"/>
-              <!-- Umbra masinii -->
+              android:width="108dp" android:height="108dp"
+              android:viewportWidth="108" android:viewportHeight="108">
+              <path android:fillColor="#00000000" android:strokeColor="#1976D2" android:strokeWidth="4"
+                  android:pathData="M16,4 Q4,4 4,16 L4,92 Q4,104 16,104 L92,104 Q104,104 104,92 L104,16 Q104,4 92,4 Z"/>
+              <path android:fillColor="#E3F2FD" android:pathData="M18,6 Q6,6 6,18 L6,90 Q6,102 18,102 L90,102 Q102,102 102,90 L102,18 Q102,6 90,6 Z"/>
               <path android:fillColor="#33000000" android:pathData="M20,82 a34,6 0 1,0 68,0 a34,6 0 1,0 -68,0"/>
-              <!-- Caroserie Masina (Rosu) -->
               <path android:fillColor="#D32F2F" android:pathData="M20,65 h68 v10 a5,5 0 0,1 -5,5 h-58 a5,5 0 0,1 -5,-5 z"/>
-              <path android:fillColor="#D32F2F" android:pathData="M30,45 h48 l12,20 h-72 z"/>
-              <!-- Geamuri -->
+              <path android:fillColor="#B71C1C" android:pathData="M30,45 h48 l12,20 h-72 z"/>
               <path android:fillColor="#1E1E1E" android:pathData="M35,48 h16 v12 h-22 z"/>
               <path android:fillColor="#1E1E1E" android:pathData="M56,48 h14 l7,12 h-21 z"/>
               <path android:fillColor="#55FFFFFF" android:pathData="M36,49 h14 v3 h-20 z"/>
-              <path android:fillColor="#55FFFFFF" android:pathData="M57,49 h12 l3,3 h-15 z"/>
-              <!-- Roti -->
               <path android:fillColor="#111111" android:pathData="M35,80 m-10,0 a10,10 0 1,1 20,0 a10,10 0 1,1 -20,0"/>
-              <path android:fillColor="#757575" android:pathData="M35,80 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0"/>
+              <path android:fillColor="#9E9E9E" android:pathData="M35,80 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0"/>
               <path android:fillColor="#111111" android:pathData="M73,80 m-10,0 a10,10 0 1,1 20,0 a10,10 0 1,1 -20,0"/>
-              <path android:fillColor="#757575" android:pathData="M73,80 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0"/>
-              <!-- Semnul Dolar (Verde) -->
-              <path android:strokeColor="#003300" android:strokeWidth="6" android:strokeLineCap="round" android:fillColor="#00000000" android:pathData="M56,54 v14 M50,57 h8 a2,2 0 0,1 0,4 h-4 a2,2 0 0,0 0,4 h8"/>
-              <path android:strokeColor="#00E676" android:strokeWidth="4" android:strokeLineCap="round" android:fillColor="#00000000" android:pathData="M54,52 v14 M48,55 h8 a2,2 0 0,1 0,4 h-4 a2,2 0 0,0 0,4 h8"/>
+              <path android:fillColor="#9E9E9E" android:pathData="M73,80 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0"/>
+              <path android:strokeColor="#003300" android:strokeWidth="6" android:strokeLineCap="round"
+                  android:pathData="M56,54 v14 M50,57 h8 a2,2 0 0,1 0,4 h-4 a2,2 0 0,0 0,4 h8"/>
+              <path android:strokeColor="#00E676" android:strokeWidth="4" android:strokeLineCap="round"
+                  android:pathData="M54,52 v14 M48,55 h8 a2,2 0 0,1 0,4 h-4 a2,2 0 0,0 0,4 h8"/>
           </vector>
           ''')
 
@@ -190,84 +133,75 @@ jobs:
           ''')
 
           w('app/src/main/res/drawable/bg_gradient.xml', '''
-          <?xml version="1.0" encoding="utf-8"?>
           <shape xmlns:android="http://schemas.android.com/apk/res/android">
-              <gradient
-                  android:startColor="#E3F2FD"
-                  android:endColor="#FFFFFF"
-                  android:angle="270" />
+              <gradient android:startColor="#E3F2FD" android:endColor="#FFFFFF" android:angle="270" />
+          </shape>
+          ''')
+
+          w('app/src/main/res/drawable/card_bg.xml', '''
+          <shape xmlns:android="http://schemas.android.com/apk/res/android">
+              <solid android:color="#FFFFFF"/>
+              <corners android:radius="16dp"/>
+          </shape>
+          ''')
+
+          w('app/src/main/res/drawable/rounded_btn.xml', '''
+          <shape xmlns:android="http://schemas.android.com/apk/res/android">
+              <solid android:color="#FFFFFF"/>
+              <corners android:radius="30dp"/>
           </shape>
           ''')
 
           w('app/src/main/res/layout/activity_main.xml', '''
           <?xml version="1.0" encoding="utf-8"?>
           <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
               android:layout_width="match_parent" android:layout_height="match_parent"
-              android:fillViewport="true"
-              android:background="@drawable/bg_gradient">
-              <LinearLayout android:orientation="vertical"
-                  android:layout_width="match_parent" android:layout_height="wrap_content">
+              android:fillViewport="true" android:background="@drawable/bg_gradient">
+              <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content">
 
                   <TextView android:id="@+id/tvStatus"
                       android:layout_width="match_parent" android:layout_height="wrap_content"
-                      android:background="#111111"
-                      android:paddingTop="24dp" android:paddingBottom="24dp"
-                      android:paddingLeft="16dp" android:paddingRight="16dp"
-                      android:gravity="center"
-                      android:textSize="22sp" android:textStyle="bold"
-                      android:textColor="#888888"
-                      android:elevation="8dp"
+                      android:background="#111111" android:paddingTop="24dp" android:paddingBottom="24dp"
+                      android:gravity="center" android:textSize="22sp" android:textStyle="bold"
+                      android:textColor="#888888" android:elevation="8dp"
                       android:text="Introdu datele cursei"/>
 
                   <LinearLayout android:orientation="vertical" android:padding="20dp"
                       android:layout_width="match_parent" android:layout_height="wrap_content">
 
-                      <com.google.android.material.card.MaterialCardView
-                          android:layout_width="match_parent" android:layout_height="wrap_content"
-                          app:cardCornerRadius="16dp" app:cardElevation="6dp"
-                          android:layout_marginBottom="16dp">
-                          <LinearLayout android:orientation="vertical" android:padding="16dp"
-                              android:layout_width="match_parent" android:layout_height="wrap_content">
-                              <TextView android:text="Km până la preluare" android:textColor="#757575" android:textSize="12sp" />
-                              <EditText android:id="@+id/etPickup" android:inputType="numberDecimal"
-                                  android:hint="0.0" android:textSize="20sp" android:textStyle="bold"
-                                  android:background="@null"
-                                  android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                          </LinearLayout>
-                      </com.google.android.material.card.MaterialCardView>
+                      <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+                          android:background="@drawable/card_bg" android:elevation="6dp"
+                          android:outlineProvider="background" android:padding="16dp" android:layout_marginBottom="16dp">
+                          <TextView android:text="Km până la preluare" android:textColor="#757575" android:textSize="12sp"
+                              android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                          <EditText android:id="@+id/etPickup" android:inputType="numberDecimal" android:hint="0.0"
+                              android:textSize="20sp" android:textStyle="bold" android:background="@null"
+                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                      </LinearLayout>
 
-                      <com.google.android.material.card.MaterialCardView
-                          android:layout_width="match_parent" android:layout_height="wrap_content"
-                          app:cardCornerRadius="16dp" app:cardElevation="6dp"
-                          android:layout_marginBottom="16dp">
-                          <LinearLayout android:orientation="vertical" android:padding="16dp"
-                              android:layout_width="match_parent" android:layout_height="wrap_content">
-                              <TextView android:text="Km cursă (cu pasager)" android:textColor="#757575" android:textSize="12sp" />
-                              <EditText android:id="@+id/etTrip" android:inputType="numberDecimal"
-                                  android:hint="0.0" android:textSize="20sp" android:textStyle="bold"
-                                  android:background="@null"
-                                  android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                          </LinearLayout>
-                      </com.google.android.material.card.MaterialCardView>
+                      <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+                          android:background="@drawable/card_bg" android:elevation="6dp"
+                          android:outlineProvider="background" android:padding="16dp" android:layout_marginBottom="16dp">
+                          <TextView android:text="Km cursă (cu pasager)" android:textColor="#757575" android:textSize="12sp"
+                              android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                          <EditText android:id="@+id/etTrip" android:inputType="numberDecimal" android:hint="0.0"
+                              android:textSize="20sp" android:textStyle="bold" android:background="@null"
+                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                      </LinearLayout>
 
-                      <com.google.android.material.card.MaterialCardView
-                          android:layout_width="match_parent" android:layout_height="wrap_content"
-                          app:cardCornerRadius="16dp" app:cardElevation="6dp"
-                          android:layout_marginBottom="20dp">
-                          <LinearLayout android:orientation="vertical" android:padding="16dp"
-                              android:layout_width="match_parent" android:layout_height="wrap_content">
-                              <TextView android:text="Tarif oferit (RON)" android:textColor="#757575" android:textSize="12sp" />
-                              <EditText android:id="@+id/etPrice" android:inputType="numberDecimal"
-                                  android:hint="0.0" android:textSize="20sp" android:textStyle="bold"
-                                  android:background="@null"
-                                  android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                          </LinearLayout>
-                      </com.google.android.material.card.MaterialCardView>
+                      <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+                          android:background="@drawable/card_bg" android:elevation="6dp"
+                          android:outlineProvider="background" android:padding="16dp" android:layout_marginBottom="20dp">
+                          <TextView android:text="Tarif oferit (RON)" android:textColor="#757575" android:textSize="12sp"
+                              android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                          <EditText android:id="@+id/etPrice" android:inputType="numberDecimal" android:hint="0.0"
+                              android:textSize="20sp" android:textStyle="bold" android:background="@null"
+                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                      </LinearLayout>
 
                       <Button android:id="@+id/btnCalc" android:text="CALCULEAZĂ"
-                          app:backgroundTint="#4CAF50" android:textColor="#FFFFFF" android:textStyle="bold"
-                          app:cornerRadius="24dp" android:elevation="8dp"
+                          android:background="@drawable/rounded_btn" android:backgroundTint="#4CAF50"
+                          android:textColor="#FFFFFF" android:textStyle="bold" android:elevation="8dp"
                           android:layout_width="match_parent" android:layout_height="56dp"/>
 
                       <TextView android:id="@+id/tvResult" android:layout_marginTop="16dp"
@@ -282,54 +216,47 @@ jobs:
                       <LinearLayout android:orientation="horizontal" android:layout_marginTop="8dp"
                           android:layout_width="match_parent" android:layout_height="wrap_content">
                           <Button android:id="@+id/btnSumarZilnic" android:text="Zilnic"
-                              app:backgroundTint="#9C27B0" android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="12sp"
-                              app:cornerRadius="20dp" android:elevation="4dp"
+                              android:background="@drawable/rounded_btn" android:backgroundTint="#9C27B0"
+                              android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="12sp" android:elevation="4dp"
                               android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
                           <Button android:id="@+id/btnSumarSaptamanal" android:text="Săpt."
-                              app:backgroundTint="#4CAF50" android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="12sp"
-                              app:cornerRadius="20dp" android:elevation="4dp"
+                              android:background="@drawable/rounded_btn" android:backgroundTint="#4CAF50"
+                              android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="12sp" android:elevation="4dp"
                               android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
                           <Button android:id="@+id/btnSumarLunar" android:text="Lunar"
-                              app:backgroundTint="#FF9800" android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="12sp"
-                              app:cornerRadius="20dp" android:elevation="4dp"
+                              android:background="@drawable/rounded_btn" android:backgroundTint="#FF9800"
+                              android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="12sp" android:elevation="4dp"
                               android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
                           <Button android:id="@+id/btnSumarAnual" android:text="Anual"
-                              app:backgroundTint="#2196F3" android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="12sp"
-                              app:cornerRadius="20dp" android:elevation="4dp"
+                              android:background="@drawable/rounded_btn" android:backgroundTint="#2196F3"
+                              android:textColor="#FFFFFF" android:textStyle="bold" android:textSize="12sp" android:elevation="4dp"
                               android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"/>
                       </LinearLayout>
 
                       <Button android:id="@+id/btnVehicle" android:text="Rubrică Autovehicul"
-                          app:backgroundTint="#E91E63" android:textColor="#FFFFFF" android:textStyle="bold"
-                          app:cornerRadius="24dp" android:elevation="6dp"
-                          android:layout_marginTop="16dp"
-                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                          android:background="@drawable/rounded_btn" android:backgroundTint="#E91E63"
+                          android:textColor="#FFFFFF" android:textStyle="bold" android:elevation="6dp"
+                          android:layout_marginTop="16dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
                       <Button android:id="@+id/btnSettings" android:text="Setări costuri"
-                          app:backgroundTint="#2196F3" android:textColor="#FFFFFF" android:textStyle="bold"
-                          app:cornerRadius="24dp" android:elevation="6dp"
-                          android:layout_marginTop="8dp"
-                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                          android:background="@drawable/rounded_btn" android:backgroundTint="#2196F3"
+                          android:textColor="#FFFFFF" android:textStyle="bold" android:elevation="6dp"
+                          android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
                       <Button android:id="@+id/btnAccessibility" android:text="Activează citirea automată"
-                          app:backgroundTint="#FF9800" android:textColor="#FFFFFF" android:textStyle="bold"
-                          app:cornerRadius="24dp" android:elevation="6dp"
-                          android:layout_marginTop="8dp"
-                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                          android:background="@drawable/rounded_btn" android:backgroundTint="#FF9800"
+                          android:textColor="#FFFFFF" android:textStyle="bold" android:elevation="6dp"
+                          android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
                       <Button android:id="@+id/btnOverlay" android:text="Permite afișare peste alte aplicații"
-                          app:backgroundTint="#9C27B0" android:textColor="#FFFFFF" android:textStyle="bold"
-                          app:cornerRadius="24dp" android:elevation="6dp"
-                          android:layout_marginTop="8dp"
-                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                          android:background="@drawable/rounded_btn" android:backgroundTint="#9C27B0"
+                          android:textColor="#FFFFFF" android:textStyle="bold" android:elevation="6dp"
+                          android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
                       <Button android:id="@+id/btnDebug" android:text="Vezi textul citit (Debug)"
-                          app:backgroundTint="#F44336" android:textColor="#FFFFFF"
-                          app:cornerRadius="24dp" android:elevation="6dp"
-                          android:layout_marginTop="8dp"
-                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                          
+                          android:background="@drawable/rounded_btn" android:backgroundTint="#F44336"
+                          android:textColor="#FFFFFF" android:elevation="6dp"
+                          android:layout_marginTop="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
                       <Button android:id="@+id/btnStopAll" android:text="OPRIRE TOTALĂ APLICAȚIE"
-                          app:backgroundTint="#B71C1C" android:textColor="#FFFFFF" android:textStyle="bold"
-                          app:cornerRadius="24dp" android:elevation="8dp"
-                          android:layout_marginTop="24dp"
-                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                          android:background="@drawable/rounded_btn" android:backgroundTint="#B71C1C"
+                          android:textColor="#FFFFFF" android:textStyle="bold" android:elevation="8dp"
+                          android:layout_marginTop="24dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
                   </LinearLayout>
               </LinearLayout>
           </ScrollView>
@@ -338,118 +265,114 @@ jobs:
           w('app/src/main/res/layout/activity_vehicle.xml', '''
           <?xml version="1.0" encoding="utf-8"?>
           <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
               android:layout_width="match_parent" android:layout_height="match_parent"
               android:background="@drawable/bg_gradient">
               <LinearLayout android:orientation="vertical" android:padding="20dp"
                   android:layout_width="match_parent" android:layout_height="wrap_content">
-                  
-                  <TextView android:text="Alerte Expirare"
-                      android:textSize="22sp" android:textStyle="bold" android:textColor="#333333"
-                      android:layout_marginBottom="20dp"
+                  <TextView android:text="Alerte Expirare" android:textSize="22sp" android:textStyle="bold"
+                      android:textColor="#333333" android:layout_marginBottom="20dp"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"/>
 
-                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
-                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
-                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-                          <TextView android:text="RCA" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
-                          <EditText android:id="@+id/etRca" android:focusable="false" android:clickable="true" android:hint="Alege data"
-                              android:inputType="none" android:background="@null" android:textStyle="bold"
-                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                      </LinearLayout>
-                  </com.google.android.material.card.MaterialCardView>
+                  <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:background="@drawable/card_bg" android:elevation="4dp" android:outlineProvider="background"
+                      android:padding="12dp" android:layout_marginBottom="8dp">
+                      <TextView android:text="RCA" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp"
+                          android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                      <EditText android:id="@+id/etRca" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                          android:inputType="none" android:background="@null" android:textStyle="bold"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  </LinearLayout>
 
-                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
-                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
-                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-                          <TextView android:text="RCA Persoane" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
-                          <EditText android:id="@+id/etRcaPersoane" android:focusable="false" android:clickable="true" android:hint="Alege data"
-                              android:inputType="none" android:background="@null" android:textStyle="bold"
-                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                      </LinearLayout>
-                  </com.google.android.material.card.MaterialCardView>
+                  <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:background="@drawable/card_bg" android:elevation="4dp" android:outlineProvider="background"
+                      android:padding="12dp" android:layout_marginBottom="8dp">
+                      <TextView android:text="RCA Persoane" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp"
+                          android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                      <EditText android:id="@+id/etRcaPersoane" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                          android:inputType="none" android:background="@null" android:textStyle="bold"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  </LinearLayout>
 
-                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
-                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
-                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-                          <TextView android:text="RCA Bagaje" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
-                          <EditText android:id="@+id/etRcaBagaje" android:focusable="false" android:clickable="true" android:hint="Alege data"
-                              android:inputType="none" android:background="@null" android:textStyle="bold"
-                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                      </LinearLayout>
-                  </com.google.android.material.card.MaterialCardView>
+                  <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:background="@drawable/card_bg" android:elevation="4dp" android:outlineProvider="background"
+                      android:padding="12dp" android:layout_marginBottom="8dp">
+                      <TextView android:text="RCA Bagaje" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp"
+                          android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                      <EditText android:id="@+id/etRcaBagaje" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                          android:inputType="none" android:background="@null" android:textStyle="bold"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  </LinearLayout>
 
-                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
-                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
-                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-                          <TextView android:text="ITP" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
-                          <EditText android:id="@+id/etItp" android:focusable="false" android:clickable="true" android:hint="Alege data"
-                              android:inputType="none" android:background="@null" android:textStyle="bold"
-                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                      </LinearLayout>
-                  </com.google.android.material.card.MaterialCardView>
+                  <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:background="@drawable/card_bg" android:elevation="4dp" android:outlineProvider="background"
+                      android:padding="12dp" android:layout_marginBottom="8dp">
+                      <TextView android:text="ITP" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp"
+                          android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                      <EditText android:id="@+id/etItp" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                          android:inputType="none" android:background="@null" android:textStyle="bold"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  </LinearLayout>
 
-                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
-                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
-                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-                          <TextView android:text="Stingător" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
-                          <EditText android:id="@+id/etStingator" android:focusable="false" android:clickable="true" android:hint="Alege data"
-                              android:inputType="none" android:background="@null" android:textStyle="bold"
-                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                      </LinearLayout>
-                  </com.google.android.material.card.MaterialCardView>
+                  <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:background="@drawable/card_bg" android:elevation="4dp" android:outlineProvider="background"
+                      android:padding="12dp" android:layout_marginBottom="8dp">
+                      <TextView android:text="Stingător" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp"
+                          android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                      <EditText android:id="@+id/etStingator" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                          android:inputType="none" android:background="@null" android:textStyle="bold"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  </LinearLayout>
 
-                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
-                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
-                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-                          <TextView android:text="Trusă Medicală" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
-                          <EditText android:id="@+id/etTrusa" android:focusable="false" android:clickable="true" android:hint="Alege data"
-                              android:inputType="none" android:background="@null" android:textStyle="bold"
-                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                      </LinearLayout>
-                  </com.google.android.material.card.MaterialCardView>
+                  <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:background="@drawable/card_bg" android:elevation="4dp" android:outlineProvider="background"
+                      android:padding="12dp" android:layout_marginBottom="8dp">
+                      <TextView android:text="Trusă Medicală" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp"
+                          android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                      <EditText android:id="@+id/etTrusa" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                          android:inputType="none" android:background="@null" android:textStyle="bold"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  </LinearLayout>
 
-                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
-                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
-                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-                          <TextView android:text="Copie Conformă" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
-                          <EditText android:id="@+id/etCopieConforma" android:focusable="false" android:clickable="true" android:hint="Alege data"
-                              android:inputType="none" android:background="@null" android:textStyle="bold"
-                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                      </LinearLayout>
-                  </com.google.android.material.card.MaterialCardView>
+                  <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:background="@drawable/card_bg" android:elevation="4dp" android:outlineProvider="background"
+                      android:padding="12dp" android:layout_marginBottom="8dp">
+                      <TextView android:text="Copie Conformă" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp"
+                          android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                      <EditText android:id="@+id/etCopieConforma" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                          android:inputType="none" android:background="@null" android:textStyle="bold"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  </LinearLayout>
 
-                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
-                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
-                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-                          <TextView android:text="Ecusoane" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
-                          <EditText android:id="@+id/etEcusoane" android:focusable="false" android:clickable="true" android:hint="Alege data"
-                              android:inputType="none" android:background="@null" android:textStyle="bold"
-                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                      </LinearLayout>
-                  </com.google.android.material.card.MaterialCardView>
+                  <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:background="@drawable/card_bg" android:elevation="4dp" android:outlineProvider="background"
+                      android:padding="12dp" android:layout_marginBottom="8dp">
+                      <TextView android:text="Ecusoane" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp"
+                          android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                      <EditText android:id="@+id/etEcusoane" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                          android:inputType="none" android:background="@null" android:textStyle="bold"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  </LinearLayout>
 
-                  <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content"
-                      app:cardCornerRadius="12dp" app:cardElevation="4dp" android:layout_marginBottom="8dp">
-                      <LinearLayout android:orientation="vertical" android:padding="12dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-                          <TextView android:text="Fișă Medicală" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp" />
-                          <EditText android:id="@+id/etFisaMedicala" android:focusable="false" android:clickable="true" android:hint="Alege data"
-                              android:inputType="none" android:background="@null" android:textStyle="bold"
-                              android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                      </LinearLayout>
-                  </com.google.android.material.card.MaterialCardView>
+                  <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:background="@drawable/card_bg" android:elevation="4dp" android:outlineProvider="background"
+                      android:padding="12dp" android:layout_marginBottom="8dp">
+                      <TextView android:text="Fișă Medicală" android:textStyle="bold" android:textColor="#E91E63" android:textSize="12sp"
+                          android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                      <EditText android:id="@+id/etFisaMedicala" android:focusable="false" android:clickable="true" android:hint="Alege data"
+                          android:inputType="none" android:background="@null" android:textStyle="bold"
+                          android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                  </LinearLayout>
 
                   <LinearLayout android:orientation="horizontal" android:layout_marginTop="24dp"
                       android:layout_width="match_parent" android:layout_height="wrap_content">
                       <Button android:id="@+id/btnSaveVehicle" android:text="SALVEAZĂ"
-                          app:backgroundTint="#4CAF50" android:textColor="#FFFFFF" android:textStyle="bold"
-                          app:cornerRadius="24dp" android:elevation="6dp"
+                          android:background="@drawable/rounded_btn" android:backgroundTint="#4CAF50"
+                          android:textColor="#FFFFFF" android:textStyle="bold" android:elevation="6dp"
                           android:layout_weight="1" android:layout_width="0dp" android:layout_height="wrap_content"/>
                       <Button android:id="@+id/btnResetVehicle" android:text="RESET"
-                          app:backgroundTint="#F44336" android:textColor="#FFFFFF" android:textStyle="bold"
-                          app:cornerRadius="24dp" android:elevation="6dp"
-                          android:layout_marginLeft="12dp"
-                          android:layout_weight="1" android:layout_width="0dp" android:layout_height="wrap_content"/>
+                          android:background="@drawable/rounded_btn" android:backgroundTint="#F44336"
+                          android:textColor="#FFFFFF" android:textStyle="bold" android:elevation="6dp"
+                          android:layout_marginLeft="12dp" android:layout_weight="1" android:layout_width="0dp" android:layout_height="wrap_content"/>
                   </LinearLayout>
               </LinearLayout>
           </ScrollView>
@@ -458,26 +381,19 @@ jobs:
           w('app/src/main/res/layout/activity_summary.xml', '''
           <?xml version="1.0" encoding="utf-8"?>
           <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
               android:orientation="vertical" android:padding="24dp"
               android:background="@drawable/bg_gradient"
               android:layout_width="match_parent" android:layout_height="match_parent">
-              
-              <TextView android:id="@+id/tvSummaryTitle"
-                  android:textSize="22sp" android:textStyle="bold" android:textColor="#333333"
-                  android:layout_width="match_parent" android:layout_height="wrap_content"
+              <TextView android:id="@+id/tvSummaryTitle" android:textSize="22sp" android:textStyle="bold"
+                  android:textColor="#333333" android:layout_width="match_parent" android:layout_height="wrap_content"
                   android:layout_marginBottom="24dp"/>
-
-              <TextView android:id="@+id/tvSummaryContent"
-                  android:textSize="18sp" android:textColor="#111111" android:fontFamily="monospace"
-                  android:background="#FFFFFF" android:padding="20dp" android:elevation="8dp"
-                  android:lineSpacingExtra="8dp"
-                  android:layout_width="match_parent" android:layout_height="wrap_content"
+              <TextView android:id="@+id/tvSummaryContent" android:textSize="18sp" android:textColor="#111111"
+                  android:fontFamily="monospace" android:background="#FFFFFF" android:padding="20dp" android:elevation="8dp"
+                  android:lineSpacingExtra="8dp" android:layout_width="match_parent" android:layout_height="wrap_content"
                   android:layout_marginBottom="24dp"/>
-
               <Button android:id="@+id/btnResetSummary" android:text="RESETEAZĂ DATELE"
-                  app:backgroundTint="#F44336" android:textColor="#FFFFFF" android:textStyle="bold"
-                  app:cornerRadius="24dp" android:elevation="6dp"
+                  android:background="@drawable/rounded_btn" android:backgroundTint="#F44336"
+                  android:textColor="#FFFFFF" android:textStyle="bold" android:elevation="6dp"
                   android:layout_width="match_parent" android:layout_height="wrap_content"/>
           </LinearLayout>
           ''')
@@ -485,46 +401,44 @@ jobs:
           w('app/src/main/res/layout/activity_settings.xml', '''
           <?xml version="1.0" encoding="utf-8"?>
           <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
               android:layout_width="match_parent" android:layout_height="match_parent"
               android:background="@drawable/bg_gradient">
               <LinearLayout android:orientation="vertical" android:padding="20dp"
                   android:layout_width="match_parent" android:layout_height="wrap_content">
                   <TextView android:text="Preț benzină (RON/L)" android:textStyle="bold" android:textColor="#333333"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                  <EditText android:id="@+id/etFuelPrice" android:inputType="numberDecimal" app:backgroundTint="#4CAF50"
+                  <EditText android:id="@+id/etFuelPrice" android:inputType="numberDecimal"
                       android:layout_width="match_parent" android:layout_height="wrap_content"/>
                   <TextView android:text="Consum (L/100km)" android:textStyle="bold" android:textColor="#333333" android:layout_marginTop="12dp"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                  <EditText android:id="@+id/etConsumption" android:inputType="numberDecimal" app:backgroundTint="#4CAF50"
+                  <EditText android:id="@+id/etConsumption" android:inputType="numberDecimal"
                       android:layout_width="match_parent" android:layout_height="wrap_content"/>
                   <TextView android:text="Comision platformă (%)" android:textStyle="bold" android:textColor="#333333" android:layout_marginTop="12dp"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                  <EditText android:id="@+id/etCommission" android:inputType="numberDecimal" app:backgroundTint="#4CAF50"
+                  <EditText android:id="@+id/etCommission" android:inputType="numberDecimal"
                       android:layout_width="match_parent" android:layout_height="wrap_content"/>
                   <TextView android:text="Cost uzură (RON/km)" android:textStyle="bold" android:textColor="#333333" android:layout_marginTop="12dp"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                  <EditText android:id="@+id/etExtraCost" android:inputType="numberDecimal" app:backgroundTint="#4CAF50"
+                  <EditText android:id="@+id/etExtraCost" android:inputType="numberDecimal"
                       android:layout_width="match_parent" android:layout_height="wrap_content"/>
                   <TextView android:text="Prag minim (RON/km)" android:textStyle="bold" android:textColor="#333333" android:layout_marginTop="12dp"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                  <EditText android:id="@+id/etMinPerKm" android:inputType="numberDecimal" app:backgroundTint="#4CAF50"
+                  <EditText android:id="@+id/etMinPerKm" android:inputType="numberDecimal"
                       android:layout_width="match_parent" android:layout_height="wrap_content"/>
                   <TextView android:text="Prag minim (RON/oră)" android:textStyle="bold" android:textColor="#333333" android:layout_marginTop="12dp"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                  <EditText android:id="@+id/etMinPerHour" android:inputType="numberDecimal" app:backgroundTint="#4CAF50"
+                  <EditText android:id="@+id/etMinPerHour" android:inputType="numberDecimal"
                       android:layout_width="match_parent" android:layout_height="wrap_content"/>
                   <TextView android:text="Viteză medie (km/h)" android:textStyle="bold" android:textColor="#333333" android:layout_marginTop="12dp"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                  <EditText android:id="@+id/etAvgSpeed" android:inputType="numberDecimal" app:backgroundTint="#4CAF50"
+                  <EditText android:id="@+id/etAvgSpeed" android:inputType="numberDecimal"
                       android:layout_width="match_parent" android:layout_height="wrap_content"/>
                   <CheckBox android:id="@+id/cbTtsEnabled" android:text="Anunț vocal (TTS ro-RO)" android:textColor="#333333"
-                      android:layout_marginTop="12dp"
-                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                  <Button android:id="@+id/btnSave" android:text="SALVEAZĂ" app:backgroundTint="#4CAF50" android:textColor="#FFFFFF" android:textStyle="bold"
-                      app:cornerRadius="24dp" android:elevation="6dp"
-                      android:layout_marginTop="24dp"
-                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                      android:layout_marginTop="12dp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                  <Button android:id="@+id/btnSave" android:text="SALVEAZĂ"
+                      android:background="@drawable/rounded_btn" android:backgroundTint="#4CAF50"
+                      android:textColor="#FFFFFF" android:textStyle="bold" android:elevation="6dp"
+                      android:layout_marginTop="24dp" android:layout_width="match_parent" android:layout_height="wrap_content"/>
               </LinearLayout>
           </ScrollView>
           ''')
@@ -535,29 +449,10 @@ jobs:
               android:layout_width="match_parent" android:layout_height="match_parent">
               <LinearLayout android:orientation="vertical" android:padding="16dp"
                   android:layout_width="match_parent" android:layout_height="wrap_content">
-                  <TextView android:text="Ghid instalare Honor Magic 5"
-                      android:textSize="18sp" android:textStyle="bold"
+                  <TextView android:text="Ghid instalare Honor Magic 5" android:textSize="18sp" android:textStyle="bold"
                       android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                  <TextView android:text="MagicOS inchide agresiv serviciile de fundal. Fara acesti pasi, overlay-ul nu va aparea."
-                      android:layout_marginTop="6dp" android:textSize="12sp"
-                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                  <TextView android:text="1. Afisare peste alte aplicatii"
-                      android:textStyle="bold" android:textSize="15sp" android:layout_marginTop="20dp"
-                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                  <TextView android:text="In app: butonul Permite afisare peste alte aplicatii"
-                      android:layout_marginTop="4dp" android:textSize="13sp"
-                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                  <TextView android:text="2. Serviciu de accesibilitate"
-                      android:textStyle="bold" android:textSize="15sp" android:layout_marginTop="18dp"
-                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                  <TextView android:text="In app: butonul Activeaza citirea automata"
-                      android:layout_marginTop="4dp" android:textSize="13sp"
-                      android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                  <TextView android:text="3. Baterie fara restrictii (CRITIC)"
-                      android:textStyle="bold" android:textSize="15sp" android:layout_marginTop="18dp"
-                      android:layout_width="wrap_content" android:layout_height="wrap_content"/>
-                  <TextView android:text="Setari -> Baterie -> Lansare aplicatii -> ProfitRide -> Gestioneaza manual. Bifeaza toate."
-                      android:layout_marginTop="4dp" android:textSize="13sp"
+                  <TextView android:text="1. Afișare peste alte aplicații\n2. Accesibilitate\n3. Baterie fără restricții\n4. Voce română"
+                      android:layout_marginTop="6dp" android:textSize="14sp"
                       android:layout_width="match_parent" android:layout_height="wrap_content"/>
               </LinearLayout>
           </ScrollView>
@@ -567,66 +462,32 @@ jobs:
           package ro.profitride
 
           object OfferParser {
-              data class Offer(
-                  val priceRon: Float,
-                  val pickupKm: Float,
-                  val tripKm: Float,
-                  val pickupMinutes: Int,
-                  val tripMinutes: Int
-              )
+              data class Offer(val priceRon: Float, val pickupKm: Float, val tripKm: Float, val pickupMinutes: Int, val tripMinutes: Int)
 
               fun parse(text: String, avgSpeedKmh: Float = 25f): Offer? {
                   var price = Regex("""(\\d+(?:[.,]\\d{1,2})?)\\s*(?:RON|lei)""", RegexOption.IGNORE_CASE).findAll(text).mapNotNull { it.groupValues[1].replace(',', '.').toFloatOrNull() }.filter { it in 3f..2000f }.maxOrNull()
-                  
                   if (price == null) {
-                      price = Regex("""(\\d+(?:[.,]\\d{1,2})?)""").findAll(text)
-                          .mapNotNull { m ->
-                              val valStr = m.groupValues[1]
-                              val after = text.substring(m.range.last + 1).take(10).lowercase()
-                              if (!after.contains("km") && !after.contains("min") && !after.contains("ron")) {
-                                  valStr.replace(',', '.').toFloatOrNull()
-                              } else null
-                          }
-                          .filter { it in 5f..500f }
-                          .maxOrNull()
+                      price = Regex("""(\\d+(?:[.,]\\d{1,2})?)""").findAll(text).mapNotNull { m ->
+                          val valStr = m.groupValues[1]
+                          val after = text.substring(m.range.last + 1).take(10).lowercase()
+                          if (!after.contains("km") && !after.contains("min") && !after.contains("ron")) valStr.replace(',', '.').toFloatOrNull() else null
+                      }.filter { it in 5f..500f }.maxOrNull()
                   }
-                  
                   if (price == null) return null
-
-                  val kms = Regex("""(\\d+(?:[.,]\\d+)?)\\s*km""", RegexOption.IGNORE_CASE)
-                      .findAll(text).map { it.groupValues[1].replace(',', '.').toFloat() }.toList()
-                  
-                  val mins = Regex("""(\\d+)\\s*min""", RegexOption.IGNORE_CASE)
-                      .findAll(text).map { it.groupValues[1].toInt() }.toList()
-
+                  val kms = Regex("""(\\d+(?:[.,]\\d+)?)\\s*km""", RegexOption.IGNORE_CASE).findAll(text).map { it.groupValues[1].replace(',', '.').toFloat() }.toList()
+                  val mins = Regex("""(\\d+)\\s*min""", RegexOption.IGNORE_CASE).findAll(text).map { it.groupValues[1].toInt() }.toList()
                   if (kms.isEmpty()) return null
-
-                  var pickupKm = 0f
-                  var tripKm = 0f
-                  var pickupMin = 0
-                  var tripMin = 0
-
+                  var pickupKm = 0f; var tripKm = 0f; var pickupMin = 0; var tripMin = 0
                   if (kms.size >= 2) {
-                      pickupKm = kms[0]
-                      tripKm = kms[1]
-                      if (pickupKm > tripKm * 2.5f) {
-                          val temp = pickupKm; pickupKm = tripKm; tripKm = temp
-                      }
-                  } else if (kms.size == 1) {
-                      tripKm = kms[0]
-                  }
-
+                      pickupKm = kms[0]; tripKm = kms[1]
+                      if (pickupKm > tripKm * 2.5f) { val t = pickupKm; pickupKm = tripKm; tripKm = t }
+                  } else if (kms.size == 1) tripKm = kms[0]
                   if (mins.size >= 2) {
-                      pickupMin = mins[0]
-                      tripMin = mins[1]
+                      pickupMin = mins[0]; tripMin = mins[1]
                       if (pickupMin > tripMin * 3) { val t = pickupMin; pickupMin = tripMin; tripMin = t }
-                  } else if (mins.size == 1) {
-                      tripMin = mins[0]
-                  }
-
+                  } else if (mins.size == 1) tripMin = mins[0]
                   if (tripMin == 0) tripMin = ((tripKm / avgSpeedKmh) * 60).toInt()
                   if (pickupMin == 0) pickupMin = ((pickupKm / avgSpeedKmh) * 60).toInt()
-
                   return Offer(price, pickupKm, tripKm, pickupMin, tripMin)
               }
           }
@@ -634,52 +495,37 @@ jobs:
 
           w('app/src/main/java/ro/profitride/Calc.kt', '''
           package ro.profitride
-
           import android.content.Context
           import android.graphics.Color
 
           object Calc {
-              data class Result(
-                  val text: String, 
-                  val color: Int, 
-                  val profitPerKm: Float, 
-                  val profitPerHour: Float,
-                  val totalExpenses: Float,
-                  val netProfit: Float,
-                  val speech: String
-              )
-              private val GREEN  = Color.parseColor("#4CAF50")
+              data class Result(val text: String, val color: Int, val profitPerKm: Float, val profitPerHour: Float, val totalExpenses: Float, val netProfit: Float, val speech: String)
+              private val GREEN = Color.parseColor("#4CAF50")
               private val YELLOW = Color.parseColor("#FFEB3B")
-              private val RED    = Color.parseColor("#FF5252")
+              private val RED = Color.parseColor("#FF5252")
 
               fun compute(ctx: Context, o: OfferParser.Offer): Result {
                   val p = ctx.getSharedPreferences("cfg", Context.MODE_PRIVATE)
-                  val fuelPrice    = p.getFloat("fuelPrice", 7.5f)
-                  val consumption  = p.getFloat("consumption", 7f)
-                  val commission   = p.getFloat("commission", 20f)
-                  val extraPerKm   = p.getFloat("extraCost", 0.5f)
-                  val minPerKm     = p.getFloat("minPerKm", 2.5f)
-                  val minPerHour   = p.getFloat("minPerHour", 45f)
-
-                  val totalKm  = o.pickupKm + o.tripKm
+                  val fuelPrice = p.getFloat("fuelPrice", 7.5f)
+                  val consumption = p.getFloat("consumption", 7f)
+                  val commission = p.getFloat("commission", 20f)
+                  val extraPerKm = p.getFloat("extraCost", 0.5f)
+                  val minPerKm = p.getFloat("minPerKm", 2.5f)
+                  val minPerHour = p.getFloat("minPerHour", 45f)
+                  val totalKm = o.pickupKm + o.tripKm
                   val totalMin = o.pickupMinutes + o.tripMinutes
-
                   val commissionCut = o.priceRon * commission / 100f
-                  val fuelCost      = totalKm / 100f * consumption * fuelPrice
-                  val extraCost     = totalKm * extraPerKm
-                  
+                  val fuelCost = totalKm / 100f * consumption * fuelPrice
+                  val extraCost = totalKm * extraPerKm
                   val totalExpenses = commissionCut + fuelCost + extraCost
-                  val netProfit     = o.priceRon - totalExpenses
-                  
-                  val perKm     = if (totalKm > 0f) netProfit / totalKm else 0f
-                  val perHour   = if (totalMin > 0) netProfit / (totalMin / 60f) else 0f
-
+                  val netProfit = o.priceRon - totalExpenses
+                  val perKm = if (totalKm > 0f) netProfit / totalKm else 0f
+                  val perHour = if (totalMin > 0) netProfit / (totalMin / 60f) else 0f
                   val (label, color) = when {
-                      perHour >= minPerHour * 1.2f && perKm >= minPerKm -> "PROFITABIL"   to GREEN
-                      perHour >= minPerHour        && perKm >= minPerKm * 0.8f -> "MEDIU" to YELLOW
+                      perHour >= minPerHour * 1.2f && perKm >= minPerKm -> "PROFITABIL" to GREEN
+                      perHour >= minPerHour && perKm >= minPerKm * 0.8f -> "MEDIU" to YELLOW
                       else -> "NEPROFITABIL" to RED
                   }
-
                   val text = """
                       [%s]
                       ---------------------
@@ -691,11 +537,10 @@ jobs:
                       ---------------------
                       Total: %.1f km | %d min
                   """.trimIndent().format(label, perKm, perHour, totalExpenses, netProfit, totalKm, totalMin)
-
                   val speech = when (label) {
-                      "PROFITABIL" -> "Profitabil. ${perKm.toInt()} lei pe kilometru, ${perHour.toInt()} lei pe ora."
-                      "MEDIU"      -> "Mediu. ${perHour.toInt()} lei pe ora."
-                      else         -> "Neprofitabil."
+                      "PROFITABIL" -> "Profitabil. ${perKm.toInt()} lei pe km, ${perHour.toInt()} lei pe ora."
+                      "MEDIU" -> "Mediu. ${perHour.toInt()} lei pe ora."
+                      else -> "Neprofitabil."
                   }
                   return Result(text, color, perKm, perHour, totalExpenses, netProfit, speech)
               }
@@ -704,7 +549,6 @@ jobs:
 
           w('app/src/main/java/ro/profitride/MainActivity.kt', '''
           package ro.profitride
-
           import android.Manifest
           import android.animation.ArgbEvaluator
           import android.animation.ValueAnimator
@@ -740,11 +584,9 @@ jobs:
               private lateinit var etPrice: EditText
               private lateinit var tvStatus: TextView
               private lateinit var tvResult: TextView
-
               private val handler = Handler(Looper.getMainLooper())
               private val calcRunnable = Runnable { calculate() }
               private var ignoreWatcher = false
-
               private val watcher = object : TextWatcher {
                   override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
                   override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
@@ -754,108 +596,67 @@ jobs:
                   }
                   override fun afterTextChanged(s: Editable?) {}
               }
-
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
                   setContentView(R.layout.activity_main)
-
                   if (Build.VERSION.SDK_INT >= 33) {
                       if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                           ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 101)
                       }
                   }
-
                   val workRequest = PeriodicWorkRequestBuilder<ExpiryWorker>(1, TimeUnit.DAYS).build()
-                  WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-                      "ExpiryCheck",
-                      ExistingPeriodicWorkPolicy.KEEP,
-                      workRequest
-                  )
-
+                  WorkManager.getInstance(this).enqueueUniquePeriodicWork("ExpiryCheck", ExistingPeriodicWorkPolicy.KEEP, workRequest)
                   etPickup = findViewById(R.id.etPickup)
-                  etTrip   = findViewById(R.id.etTrip)
-                  etPrice  = findViewById(R.id.etPrice)
+                  etTrip = findViewById(R.id.etTrip)
+                  etPrice = findViewById(R.id.etPrice)
                   tvStatus = findViewById(R.id.tvStatus)
                   tvResult = findViewById(R.id.tvResult)
-
                   etPickup.addTextChangedListener(watcher)
                   etTrip.addTextChangedListener(watcher)
                   etPrice.addTextChangedListener(watcher)
-
                   val btnCalc = findViewById<Button>(R.id.btnCalc)
                   val btnSumZ = findViewById<Button>(R.id.btnSumarZilnic)
                   val btnSumS = findViewById<Button>(R.id.btnSumarSaptamanal)
                   val btnSumL = findViewById<Button>(R.id.btnSumarLunar)
                   val btnSumA = findViewById<Button>(R.id.btnSumarAnual)
-                  val btnVeh  = findViewById<Button>(R.id.btnVehicle)
-                  val btnSet  = findViewById<Button>(R.id.btnSettings)
-                  val btnAcc  = findViewById<Button>(R.id.btnAccessibility)
-                  val btnOvl  = findViewById<Button>(R.id.btnOverlay)
-                  val btnDbg  = findViewById<Button>(R.id.btnDebug)
-                  val btnStp  = findViewById<Button>(R.id.btnStopAll)
-
-                  listOf(btnCalc, btnSumZ, btnSumS, btnSumL, btnSumA, btnVeh, btnSet, btnAcc, btnOvl, btnDbg, btnStp).forEach {
-                      apply3DClick(it)
-                  }
-
+                  val btnVeh = findViewById<Button>(R.id.btnVehicle)
+                  val btnSet = findViewById<Button>(R.id.btnSettings)
+                  val btnAcc = findViewById<Button>(R.id.btnAccessibility)
+                  val btnOvl = findViewById<Button>(R.id.btnOverlay)
+                  val btnDbg = findViewById<Button>(R.id.btnDebug)
+                  val btnStp = findViewById<Button>(R.id.btnStopAll)
+                  listOf(btnCalc, btnSumZ, btnSumS, btnSumL, btnSumA, btnVeh, btnSet, btnAcc, btnOvl, btnDbg, btnStp).forEach { apply3DClick(it) }
                   btnCalc.setOnClickListener { calculate() }
-                  
                   btnSumZ.setOnClickListener { startActivity(Intent(this, SummaryActivity::class.java).putExtra("PERIOADA", "DAY")) }
                   btnSumS.setOnClickListener { startActivity(Intent(this, SummaryActivity::class.java).putExtra("PERIOADA", "WEEK")) }
                   btnSumL.setOnClickListener { startActivity(Intent(this, SummaryActivity::class.java).putExtra("PERIOADA", "MONTH")) }
                   btnSumA.setOnClickListener { startActivity(Intent(this, SummaryActivity::class.java).putExtra("PERIOADA", "YEAR")) }
-
                   btnVeh.setOnClickListener { startActivity(Intent(this, VehicleActivity::class.java)) }
-
                   btnSet.setOnClickListener { startActivity(Intent(this, SettingsActivity::class.java)) }
                   btnAcc.setOnClickListener {
-                      if (!Settings.canDrawOverlays(this)) Toast.makeText(this, "Acorda mai intai permisiunea Afisare peste alte aplicatii", Toast.LENGTH_LONG).show()
+                      if (!Settings.canDrawOverlays(this)) Toast.makeText(this, "Acorda mai intai permisiunea overlay", Toast.LENGTH_LONG).show()
                       startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                   }
-                  btnOvl.setOnClickListener {
-                      startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + packageName)))
-                  }
+                  btnOvl.setOnClickListener { startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))) }
                   btnDbg.setOnClickListener {
-                      val debugContent = try {
-                          openFileInput("debug.txt").bufferedReader().use { it.readText() }
-                      } catch (e: Exception) {
-                          "Nu exista date. Deschide Bolt, asteapta o oferta, apoi revino aici."
-                      }
-                      AlertDialog.Builder(this)
-                          .setTitle("Ce a citit aplicatia:")
-                          .setMessage(debugContent.take(5000))
-                          .setPositiveButton("OK", null)
-                          .show()
+                      val debugContent = try { openFileInput("debug.txt").bufferedReader().use { it.readText() } } catch (e: Exception) { "Nu exista date." }
+                      AlertDialog.Builder(this).setTitle("Ce a citit aplicatia:").setMessage(debugContent.take(5000)).setPositiveButton("OK", null).show()
                   }
-
                   btnStp.setOnClickListener {
-                      AlertDialog.Builder(this)
-                          .setTitle("Oprire Totală")
-                          .setMessage("Sigur vrei să oprești complet serviciul de citire?")
-                          .setPositiveButton("Da, oprește") { _, _ ->
-                              OfferReader.isStopped = true
-                              Toast.makeText(this, "Aplicația a fost oprită.", Toast.LENGTH_LONG).show()
-                              finish()
-                          }
-                          .setNegativeButton("Anulează", null)
-                          .show()
+                      AlertDialog.Builder(this).setTitle("Oprire Totală").setMessage("Sigur vrei să oprești serviciul?")
+                          .setPositiveButton("Da") { _, _ -> OfferReader.isStopped = true; finish() }
+                          .setNegativeButton("Nu", null).show()
                   }
               }
-
               private fun apply3DClick(button: View) {
                   button.setOnTouchListener { v, event ->
                       when (event.action) {
-                          MotionEvent.ACTION_DOWN -> {
-                              v.animate().scaleX(0.95f).scaleY(0.95f).setDuration(100).start()
-                          }
-                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                              v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
-                          }
+                          MotionEvent.ACTION_DOWN -> v.animate().scaleX(0.95f).scaleY(0.95f).setDuration(100).start()
+                          MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
                       }
                       false
                   }
               }
-
               override fun onResume() {
                   super.onResume()
                   OfferReader.isStopped = false
@@ -870,42 +671,26 @@ jobs:
                       calculate()
                   }
               }
-
               private fun calculate() {
                   val pp = etPickup.text.toString().toFloatOrNull() ?: 0f
-                  val t  = etTrip.text.toString().toFloatOrNull() ?: 0f
+                  val t = etTrip.text.toString().toFloatOrNull() ?: 0f
                   val pr = etPrice.text.toString().toFloatOrNull() ?: 0f
                   if (pp == 0f && t == 0f && pr == 0f) {
-                      tvStatus.text = "Introdu datele cursei"
-                      tvStatus.setTextColor(Color.parseColor("#888888"))
-                      tvResult.text = ""
-                      return
+                      tvStatus.text = "Introdu datele cursei"; tvStatus.setTextColor(Color.parseColor("#888888")); tvResult.text = ""; return
                   }
-                  val offer = OfferParser.Offer(pr, pp, t, 0, 0)
-                  val r = Calc.compute(this, offer)
-                  tvStatus.text = r.text.substringBefore('\\n')
-                  tvStatus.setTextColor(r.color)
-                  tvResult.text = r.text
-                  tvResult.setTextColor(r.color)
-
-                  val colorAnimator = ValueAnimator.ofObject(ArgbEvaluator(), Color.parseColor("#111111"), r.color)
-                  colorAnimator.duration = 300
-                  colorAnimator.addUpdateListener { animator ->
-                      tvStatus.setBackgroundColor(animator.animatedValue as Int)
-                  }
-                  colorAnimator.start()
+                  val r = Calc.compute(this, OfferParser.Offer(pr, pp, t, 0, 0))
+                  tvStatus.text = r.text.substringBefore('\\n'); tvStatus.setTextColor(r.color); tvResult.text = r.text; tvResult.setTextColor(r.color)
+                  val anim = ValueAnimator.ofObject(ArgbEvaluator(), Color.parseColor("#111111"), r.color)
+                  anim.duration = 300
+                  anim.addUpdateListener { a -> tvStatus.setBackgroundColor(a.animatedValue as Int) }
+                  anim.start()
               }
-
-              override fun onDestroy() {
-                  handler.removeCallbacks(calcRunnable)
-                  super.onDestroy()
-              }
+              override fun onDestroy() { handler.removeCallbacks(calcRunnable); super.onDestroy() }
           }
           ''')
 
           w('app/src/main/java/ro/profitride/VehicleActivity.kt', '''
           package ro.profitride
-
           import android.app.DatePickerDialog
           import android.os.Bundle
           import android.widget.Button
@@ -919,12 +704,10 @@ jobs:
           class VehicleActivity : AppCompatActivity() {
               private lateinit var prefs: android.content.SharedPreferences
               private val dateFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
-
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
                   setContentView(R.layout.activity_vehicle)
                   prefs = getSharedPreferences("vehicle", MODE_PRIVATE)
-
                   val fields = listOf(
                       "rca" to findViewById<EditText>(R.id.etRca),
                       "rcaPers" to findViewById<EditText>(R.id.etRcaPersoane),
@@ -936,57 +719,36 @@ jobs:
                       "ecusoane" to findViewById<EditText>(R.id.etEcusoane),
                       "fisa" to findViewById<EditText>(R.id.etFisaMedicala)
                   )
-
-                  for ((key, editText) in fields) {
-                      val savedDate = prefs.getLong(key, 0L)
-                      if (savedDate > 0) {
-                          val cal = Calendar.getInstance().apply { timeInMillis = savedDate }
-                          editText.setText(dateFormat.format(cal.time))
-                      }
-                      editText.setOnClickListener { showDatePicker(key, editText) }
+                  for ((key, et) in fields) {
+                      val saved = prefs.getLong(key, 0L)
+                      if (saved > 0) et.setText(dateFormat.format(Calendar.getInstance().apply { timeInMillis = saved }.time))
+                      et.setOnClickListener { showDatePicker(key, et) }
                   }
-
-                  findViewById<Button>(R.id.btnSaveVehicle).setOnClickListener {
-                      Toast.makeText(this, "Date salvate cu succes!", Toast.LENGTH_SHORT).show()
-                      finish()
-                  }
-
+                  findViewById<Button>(R.id.btnSaveVehicle).setOnClickListener { Toast.makeText(this, "Salvat!", Toast.LENGTH_SHORT).show(); finish() }
                   findViewById<Button>(R.id.btnResetVehicle).setOnClickListener {
                       prefs.edit().clear().apply()
-                      for ((_, editText) in fields) {
-                          editText.setText("")
-                      }
-                      Toast.makeText(this, "Date resetate!", Toast.LENGTH_SHORT).show()
+                      fields.forEach { it.second.setText("") }
+                      Toast.makeText(this, "Resetat!", Toast.LENGTH_SHORT).show()
                   }
               }
-
-              private fun showDatePicker(key: String, editText: EditText) {
+              private fun showDatePicker(key: String, et: EditText) {
                   val cal = Calendar.getInstance()
-                  val current = prefs.getLong(key, 0L)
-                  if (current > 0) cal.timeInMillis = current
-
-                  val dialog = DatePickerDialog(this, { _, year, month, day ->
-                      val newCal = Calendar.getInstance().apply {
-                          set(Calendar.YEAR, year)
-                          set(Calendar.MONTH, month)
-                          set(Calendar.DAY_OF_MONTH, day)
-                          set(Calendar.HOUR_OF_DAY, 0)
-                          set(Calendar.MINUTE, 0)
-                          set(Calendar.SECOND, 0)
-                      }
-                      prefs.edit().putLong(key, newCal.timeInMillis).apply()
-                      editText.setText(dateFormat.format(newCal.time))
-                  }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH))
-                  
-                  dialog.datePicker.minDate = System.currentTimeMillis() - 1000
-                  dialog.show()
+                  val cur = prefs.getLong(key, 0L)
+                  if (cur > 0) cal.timeInMillis = cur
+                  DatePickerDialog(this, { _, y, m, d ->
+                      val nc = Calendar.getInstance().apply { set(y, m, d, 0, 0, 0) }
+                      prefs.edit().putLong(key, nc.timeInMillis).apply()
+                      et.setText(dateFormat.format(nc.time))
+                  }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).apply {
+                      datePicker.minDate = System.currentTimeMillis() - 1000
+                      show()
+                  }
               }
           }
           ''')
 
           w('app/src/main/java/ro/profitride/ExpiryWorker.kt', '''
           package ro.profitride
-
           import android.app.NotificationChannel
           import android.app.NotificationManager
           import android.content.Context
@@ -997,67 +759,38 @@ jobs:
           import java.util.Calendar
           import java.util.concurrent.TimeUnit
 
-          class ExpiryWorker(context: Context, workerParams: WorkerParameters) : Worker(context, workerParams) {
+          class ExpiryWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
               override fun doWork(): Result {
                   val prefs = applicationContext.getSharedPreferences("vehicle", Context.MODE_PRIVATE)
-                  val items = mapOf(
-                      "rca" to "RCA",
-                      "rcaPers" to "RCA Persoane",
-                      "rcaBag" to "RCA Bagaje",
-                      "itp" to "ITP",
-                      "stingator" to "Stingător",
-                      "trusa" to "Trusă Medicală",
-                      "copie" to "Copie Conformă",
-                      "ecusoane" to "Ecusoane",
-                      "fisa" to "Fișă Medicală"
-                  )
-
-                  val today = Calendar.getInstance().apply {
-                      set(Calendar.HOUR_OF_DAY, 0)
-                      set(Calendar.MINUTE, 0)
-                      set(Calendar.SECOND, 0)
-                      set(Calendar.MILLISECOND, 0)
-                  }.timeInMillis
-
+                  val items = mapOf("rca" to "RCA", "rcaPers" to "RCA Persoane", "rcaBag" to "RCA Bagaje", "itp" to "ITP",
+                      "stingator" to "Stingător", "trusa" to "Trusă Medicală", "copie" to "Copie Conformă",
+                      "ecusoane" to "Ecusoane", "fisa" to "Fișă Medicală")
+                  val today = Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }.timeInMillis
                   for ((key, label) in items) {
-                      val expiry = prefs.getLong(key, 0L)
-                      if (expiry > 0) {
-                          val diff = expiry - today
-                          val days = TimeUnit.MILLISECONDS.toDays(diff)
-                          
-                          if (days == 30L || days == 15L || days == 10L || days == 3L) {
-                              sendNotification(label, days.toInt())
-                          }
+                      val exp = prefs.getLong(key, 0L)
+                      if (exp > 0) {
+                          val days = TimeUnit.MILLISECONDS.toDays(exp - today)
+                          if (days == 30L || days == 15L || days == 10L || days == 3L) sendNotif(label, days.toInt())
                       }
                   }
                   return Result.success()
               }
-
-              private fun sendNotification(label: String, daysLeft: Int) {
-                  val channelId = "vehicle_alerts"
-                  val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                      val channel = NotificationChannel(channelId, "Alerte Autovehicul", NotificationManager.IMPORTANCE_HIGH)
-                      notificationManager.createNotificationChannel(channel)
-                  }
-
-                  val notification = NotificationCompat.Builder(applicationContext, channelId)
+              private fun sendNotif(label: String, days: Int) {
+                  val ch = "vehicle_alerts"
+                  val nm = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) nm.createNotificationChannel(NotificationChannel(ch, "Alerte Auto", NotificationManager.IMPORTANCE_HIGH))
+                  val n = NotificationCompat.Builder(applicationContext, ch)
                       .setSmallIcon(android.R.drawable.ic_dialog_alert)
                       .setContentTitle("Atenție! $label expiră curând!")
-                      .setContentText("Mai ai $daysLeft zile până la expirarea documentului: $label.")
-                      .setPriority(NotificationCompat.PRIORITY_HIGH)
-                      .setAutoCancel(true)
-                      .build()
-
-                  notificationManager.notify(label.hashCode(), notification)
+                      .setContentText("Mai ai $days zile până la expirarea: $label.")
+                      .setPriority(NotificationCompat.PRIORITY_HIGH).setAutoCancel(true).build()
+                  nm.notify(label.hashCode(), n)
               }
           }
           ''')
 
           w('app/src/main/java/ro/profitride/SummaryActivity.kt', '''
           package ro.profitride
-
           import android.app.AlertDialog
           import android.os.Bundle
           import android.widget.Button
@@ -1066,107 +799,49 @@ jobs:
           import java.util.Calendar
 
           class SummaryActivity : AppCompatActivity() {
-              
               private lateinit var period: String
-              private lateinit var title: TextView
               private lateinit var content: TextView
               private lateinit var prefs: android.content.SharedPreferences
-
               override fun onCreate(savedInstanceState: Bundle?) {
                   super.onCreate(savedInstanceState)
                   setContentView(R.layout.activity_summary)
-
                   period = intent.getStringExtra("PERIOADA") ?: "WEEK"
-                  title = findViewById(R.id.tvSummaryTitle)
+                  findViewById<TextView>(R.id.tvSummaryTitle).text = when(period) {
+                      "DAY" -> "Sumar Zilnic (De azi)"; "WEEK" -> "Sumar Săptămânal (De luni)"
+                      "MONTH" -> "Sumar Lunar"; "YEAR" -> "Sumar Anual"; else -> "Sumar"
+                  }
                   content = findViewById(R.id.tvSummaryContent)
                   prefs = getSharedPreferences("cfg", MODE_PRIVATE)
-
-                  title.text = when(period) {
-                      "DAY" -> "Sumar Zilnic (De azi)"
-                      "WEEK" -> "Sumar Săptămânal (De luni)"
-                      "MONTH" -> "Sumar Lunar (De luna aceasta)"
-                      "YEAR" -> "Sumar Anual (De anul acesta)"
-                      else -> "Sumar"
-                  }
-
                   loadSummary()
-
                   findViewById<Button>(R.id.btnResetSummary).setOnClickListener {
-                      AlertDialog.Builder(this)
-                          .setTitle("Confirmare Reset")
-                          .setMessage("Sigur vrei să ștergi datele pentru această perioadă?")
-                          .setPositiveButton("Da, șterge") { _, _ ->
-                              prefs.edit().putLong("reset_$period", System.currentTimeMillis()).apply()
-                              loadSummary()
-                          }
-                          .setNegativeButton("Anulează", null)
-                          .show()
+                      AlertDialog.Builder(this).setTitle("Reset").setMessage("Ștergi datele pentru această perioadă?")
+                          .setPositiveButton("Da") { _, _ -> prefs.edit().putLong("reset_$period", System.currentTimeMillis()).apply(); loadSummary() }
+                          .setNegativeButton("Nu", null).show()
                   }
               }
-
               private fun loadSummary() {
-                  val (totalRevenue, totalExpenses, totalNet) = calculateSummary()
-                  content.text = """
-                      Total Încasări: %.2f RON
-                      Total Cheltuieli: %.2f RON
-                      ---------------------
-                      PROFIT NET: %.2f RON
-                  """.trimIndent().format(totalRevenue, totalExpenses, totalNet)
+                  val (r, e, n) = calc()
+                  content.text = "Total Încasări: %.2f RON\nTotal Cheltuieli: %.2f RON\n---------------------\nPROFIT NET: %.2f RON".format(r, e, n)
               }
-
-              private fun getPeriodStartTime(): Long {
+              private fun getStart(): Long {
                   val cal = Calendar.getInstance()
                   when (period) {
-                      "DAY" -> {
-                          cal.set(Calendar.HOUR_OF_DAY, 0)
-                          cal.set(Calendar.MINUTE, 0)
-                          cal.set(Calendar.SECOND, 0)
-                          cal.set(Calendar.MILLISECOND, 0)
-                      }
-                      "WEEK" -> {
-                          cal.set(Calendar.DAY_OF_WEEK, cal.firstDayOfWeek)
-                          cal.set(Calendar.HOUR_OF_DAY, 0)
-                          cal.set(Calendar.MINUTE, 0)
-                          cal.set(Calendar.SECOND, 0)
-                          cal.set(Calendar.MILLISECOND, 0)
-                      }
-                      "MONTH" -> {
-                          cal.set(Calendar.DAY_OF_MONTH, 1)
-                          cal.set(Calendar.HOUR_OF_DAY, 0)
-                          cal.set(Calendar.MINUTE, 0)
-                          cal.set(Calendar.SECOND, 0)
-                          cal.set(Calendar.MILLISECOND, 0)
-                      }
-                      "YEAR" -> {
-                          cal.set(Calendar.DAY_OF_YEAR, 1)
-                          cal.set(Calendar.HOUR_OF_DAY, 0)
-                          cal.set(Calendar.MINUTE, 0)
-                          cal.set(Calendar.SECOND, 0)
-                          cal.set(Calendar.MILLISECOND, 0)
-                      }
+                      "DAY" -> { cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0) }
+                      "WEEK" -> { cal.set(Calendar.DAY_OF_WEEK, cal.firstDayOfWeek); cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0) }
+                      "MONTH" -> { cal.set(Calendar.DAY_OF_MONTH, 1); cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0) }
+                      "YEAR" -> { cal.set(Calendar.DAY_OF_YEAR, 1); cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0) }
                   }
                   return cal.timeInMillis
               }
-
-              private fun calculateSummary(): Triple<Float, Float, Float> {
+              private fun calc(): Triple<Float, Float, Float> {
                   var rev = 0f; var exp = 0f; var net = 0f
-                  
-                  val periodStart = getPeriodStartTime()
-                  val resetTime = prefs.getLong("reset_$period", 0L)
-                  val effectiveStart = maxOf(periodStart, resetTime)
-
+                  val eff = maxOf(getStart(), prefs.getLong("reset_$period", 0L))
                   try {
-                      openFileInput("offers.csv").bufferedReader().useLines { lines ->
-                          lines.forEach { line ->
-                              val parts = line.split(",")
-                              if (parts.size >= 8) {
-                                  val ts = parts[0].toLongOrNull() ?: 0L
-                                  if (ts >= effectiveStart) {
-                                      val price = parts[1].toFloatOrNull() ?: 0f
-                                      val e = parts[6].toFloatOrNull() ?: 0f
-                                      val n = parts[7].toFloatOrNull() ?: 0f
-                                      rev += price; exp += e; net += n
-                                  }
+                      openFileInput("offers.csv").bufferedReader().useLines { l ->
+                          l.forEach { line ->
+                              val p = line.split(",")
+                              if (p.size >= 8 && (p[0].toLongOrNull() ?: 0L) >= eff) {
+                                  rev += p[1].toFloatOrNull() ?: 0f; exp += p[6].toFloatOrNull() ?: 0f; net += p[7].toFloatOrNull() ?: 0f
                               }
                           }
                       }
@@ -1178,7 +853,6 @@ jobs:
 
           w('app/src/main/java/ro/profitride/SettingsActivity.kt', '''
           package ro.profitride
-
           import android.os.Bundle
           import android.widget.Button
           import android.widget.CheckBox
@@ -1190,36 +864,23 @@ jobs:
                   super.onCreate(savedInstanceState)
                   setContentView(R.layout.activity_settings)
                   val p = getSharedPreferences("cfg", MODE_PRIVATE)
-
-                  val etFuel   = findViewById<EditText>(R.id.etFuelPrice)
-                  val etCons   = findViewById<EditText>(R.id.etConsumption)
-                  val etComm   = findViewById<EditText>(R.id.etCommission)
-                  val etExtra  = findViewById<EditText>(R.id.etExtraCost)
-                  val etMin    = findViewById<EditText>(R.id.etMinPerKm)
-                  val etMinH   = findViewById<EditText>(R.id.etMinPerHour)
-                  val etAvg    = findViewById<EditText>(R.id.etAvgSpeed)
-                  val cbTts    = findViewById<CheckBox>(R.id.cbTtsEnabled)
-
-                  etFuel.setText(p.getFloat("fuelPrice", 7.5f).toString())
-                  etCons.setText(p.getFloat("consumption", 7f).toString())
-                  etComm.setText(p.getFloat("commission", 20f).toString())
-                  etExtra.setText(p.getFloat("extraCost", 0.5f).toString())
-                  etMin.setText(p.getFloat("minPerKm", 2.5f).toString())
-                  etMinH.setText(p.getFloat("minPerHour", 45f).toString())
-                  etAvg.setText(p.getFloat("avgSpeedKmh", 25f).toString())
-                  cbTts.isChecked = p.getBoolean("ttsEnabled", true)
-
+                  val f = findViewById<EditText>(R.id.etFuelPrice); val c = findViewById<EditText>(R.id.etConsumption)
+                  val cm = findViewById<EditText>(R.id.etCommission); val ex = findViewById<EditText>(R.id.etExtraCost)
+                  val mk = findViewById<EditText>(R.id.etMinPerKm); val mh = findViewById<EditText>(R.id.etMinPerHour)
+                  val av = findViewById<EditText>(R.id.etAvgSpeed); val cb = findViewById<CheckBox>(R.id.cbTtsEnabled)
+                  f.setText(p.getFloat("fuelPrice", 7.5f).toString()); c.setText(p.getFloat("consumption", 7f).toString())
+                  cm.setText(p.getFloat("commission", 20f).toString()); ex.setText(p.getFloat("extraCost", 0.5f).toString())
+                  mk.setText(p.getFloat("minPerKm", 2.5f).toString()); mh.setText(p.getFloat("minPerHour", 45f).toString())
+                  av.setText(p.getFloat("avgSpeedKmh", 25f).toString()); cb.isChecked = p.getBoolean("ttsEnabled", true)
                   findViewById<Button>(R.id.btnSave).setOnClickListener {
-                      p.edit()
-                          .putFloat("fuelPrice",     etFuel.text.toString().toFloatOrNull() ?: 7.5f)
-                          .putFloat("consumption",   etCons.text.toString().toFloatOrNull() ?: 7f)
-                          .putFloat("commission",    etComm.text.toString().toFloatOrNull() ?: 20f)
-                          .putFloat("extraCost",     etExtra.text.toString().toFloatOrNull() ?: 0.5f)
-                          .putFloat("minPerKm",      etMin.text.toString().toFloatOrNull() ?: 2.5f)
-                          .putFloat("minPerHour",    etMinH.text.toString().toFloatOrNull() ?: 45f)
-                          .putFloat("avgSpeedKmh",   etAvg.text.toString().toFloatOrNull() ?: 25f)
-                          .putBoolean("ttsEnabled",  cbTts.isChecked)
-                          .apply()
+                      p.edit().putFloat("fuelPrice", f.text.toString().toFloatOrNull() ?: 7.5f)
+                          .putFloat("consumption", c.text.toString().toFloatOrNull() ?: 7f)
+                          .putFloat("commission", cm.text.toString().toFloatOrNull() ?: 20f)
+                          .putFloat("extraCost", ex.text.toString().toFloatOrNull() ?: 0.5f)
+                          .putFloat("minPerKm", mk.text.toString().toFloatOrNull() ?: 2.5f)
+                          .putFloat("minPerHour", mh.text.toString().toFloatOrNull() ?: 45f)
+                          .putFloat("avgSpeedKmh", av.text.toString().toFloatOrNull() ?: 25f)
+                          .putBoolean("ttsEnabled", cb.isChecked).apply()
                       finish()
                   }
               }
@@ -1228,21 +889,17 @@ jobs:
 
           w('app/src/main/java/ro/profitride/SetupActivity.kt', '''
           package ro.profitride
-
           import android.os.Bundle
           import androidx.appcompat.app.AppCompatActivity
-
           class SetupActivity : AppCompatActivity() {
               override fun onCreate(savedInstanceState: Bundle?) {
-                  super.onCreate(savedInstanceState)
-                  setContentView(R.layout.activity_setup)
+                  super.onCreate(savedInstanceState); setContentView(R.layout.activity_setup)
               }
           }
           ''')
 
           w('app/src/main/java/ro/profitride/OfferReader.kt', r'''
           package ro.profitride
-
           import android.accessibilityservice.AccessibilityService
           import android.content.BroadcastReceiver
           import android.content.Context
@@ -1274,119 +931,71 @@ jobs:
           import java.util.Locale
 
           class OfferReader : AccessibilityService() {
-
-              companion object {
-                  var isStopped = false
-              }
-
+              companion object { var isStopped = false }
               private var overlay: View? = null
-              private var bubbleView: View? = null 
+              private var bubbleView: View? = null
               private lateinit var wm: WindowManager
               private val handler = Handler(Looper.getMainLooper())
               private val autoDismiss = Runnable { removeOverlay() }
-
               private var tts: TextToSpeech? = null
               private var vibrator: Vibrator? = null
-
               private val sb = StringBuilder(2048)
               private var lastParseAt = 0L
               private var lastKey = ""
-
               private var pendingOffer: OfferParser.Offer? = null
               private var pendingResult: Calc.Result? = null
 
               private val screenOff = object : BroadcastReceiver() {
-                  override fun onReceive(c: Context?, i: Intent?) {
-                      if (i?.action == Intent.ACTION_SCREEN_OFF) removeOverlay()
-                  }
+                  override fun onReceive(c: Context?, i: Intent?) { if (i?.action == Intent.ACTION_SCREEN_OFF) removeOverlay() }
               }
 
               override fun onServiceConnected() {
                   super.onServiceConnected()
                   wm = getSystemService(WINDOW_SERVICE) as WindowManager
-                  vibrator = if (Build.VERSION.SDK_INT >= 31)
-                      (getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
-                  else @Suppress("DEPRECATION") getSystemService(VIBRATOR_SERVICE) as Vibrator
-
-                  tts = TextToSpeech(this) { status ->
-                      if (status == TextToSpeech.SUCCESS) tts?.language = Locale("ro", "RO")
-                  }
-                  try {
-                      ContextCompat.registerReceiver(this, screenOff,
-                          IntentFilter(Intent.ACTION_SCREEN_OFF),
-                          ContextCompat.RECEIVER_NOT_EXPORTED)
-                  } catch (_: Exception) {}
-
-                  if (!isStopped) {
-                      showBubble()
-                  }
+                  vibrator = if (Build.VERSION.SDK_INT >= 31) (getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
+                      else @Suppress("DEPRECATION") getSystemService(VIBRATOR_SERVICE) as Vibrator
+                  tts = TextToSpeech(this) { status -> if (status == TextToSpeech.SUCCESS) tts?.language = Locale("ro", "RO") }
+                  try { ContextCompat.registerReceiver(this, screenOff, IntentFilter(Intent.ACTION_SCREEN_OFF), ContextCompat.RECEIVER_NOT_EXPORTED) } catch (_: Exception) {}
+                  if (!isStopped) showBubble()
               }
 
               override fun onAccessibilityEvent(event: AccessibilityEvent?) {
                   if (isStopped) return
                   if (event == null) return
-
                   val pkg = event.packageName?.toString()?.lowercase() ?: return
-                  val knownApps = listOf("bolt", "uber", "free", "mtakso", "ubercab", "clever", "taxi")
-                  if (knownApps.none { pkg.contains(it) }) return
-
+                  val known = listOf("bolt", "uber", "free", "mtakso", "ubercab", "clever", "taxi")
+                  if (known.none { pkg.contains(it) }) return
                   val now = SystemClock.elapsedRealtime()
                   if (now - lastParseAt < 500L) return
                   lastParseAt = now
-
                   val root = rootInActiveWindow ?: return
-                  
-                  sb.setLength(0)
-                  collect(root, sb, 0)
-                  val rawText = sb.toString().lowercase()
-
-                  if (rawText.isEmpty()) return
-
-                  if (rawText.contains("accept")) {
-                      val offer = OfferParser.parse(rawText, avgSpeed())
+                  sb.setLength(0); collect(root, sb, 0)
+                  val raw = sb.toString().lowercase()
+                  if (raw.isEmpty()) return
+                  if (raw.contains("accept")) {
+                      val offer = OfferParser.parse(raw, avgSpeed())
                       if (offer != null) {
-                          val key = offer.priceRon.toString() + "|" + offer.pickupKm + "|" + offer.tripKm
+                          val key = "${offer.priceRon}|${offer.pickupKm}|${offer.tripKm}"
                           if (key != lastKey) {
                               lastKey = key
                               val result = Calc.compute(this, offer)
-                              
-                              pendingOffer = offer
-                              pendingResult = result
-
-                              showOverlay(result)
-                              speak(result)
-                              vibrate(result.color)
+                              pendingOffer = offer; pendingResult = result
+                              showOverlay(result); speak(result); vibrate(result.color)
                           }
                       }
                   }
-
-                  val isFinished = rawText.contains("finalizează") || 
-                                   rawText.contains("finalizeaza") ||
-                                   rawText.contains("încheie") ||
-                                   rawText.contains("incheie") ||
-                                   rawText.contains("ați ajuns") ||
-                                   rawText.contains("ati ajuns") ||
-                                   rawText.contains("end trip") ||
-                                   rawText.contains("trip completed")
-
-                  if (isFinished && pendingOffer != null && pendingResult != null) {
-                      val offer = pendingOffer!!
-                      val result = pendingResult!!
-
+                  val finished = raw.contains("finalizează") || raw.contains("finalizeaza") || raw.contains("încheie") ||
+                                 raw.contains("incheie") || raw.contains("ați ajuns") || raw.contains("ati ajuns") ||
+                                 raw.contains("end trip") || raw.contains("trip completed")
+                  if (finished && pendingOffer != null && pendingResult != null) {
+                      val o = pendingOffer!!; val r = pendingResult!!
                       try {
                           openFileOutput("offers.csv", Context.MODE_APPEND).bufferedWriter().use {
-                              it.appendLine("" + System.currentTimeMillis() + "," +
-                                  offer.priceRon + "," + offer.pickupKm + "," +
-                                  offer.tripKm + "," + result.profitPerKm + "," + result.profitPerHour + "," +
-                                  result.totalExpenses + "," + result.netProfit)
+                              it.appendLine("${System.currentTimeMillis()},${o.priceRon},${o.pickupKm},${o.tripKm},${r.profitPerKm},${r.profitPerHour},${r.totalExpenses},${r.netProfit}")
                           }
-                          handler.post {
-                              Toast.makeText(this, "Cursă finalizată! Salvată în sumar.", Toast.LENGTH_LONG).show()
-                          }
+                          handler.post { Toast.makeText(this, "Cursă salvată în sumar!", Toast.LENGTH_LONG).show() }
                       } catch (_: Exception) {}
-
-                      pendingOffer = null
-                      pendingResult = null
+                      pendingOffer = null; pendingResult = null
                   }
               }
 
@@ -1394,28 +1003,20 @@ jobs:
                   val v = getSharedPreferences("cfg", MODE_PRIVATE).getFloat("avgSpeedKmh", 25f)
                   return if (v >= 5f) v else 25f
               }
-
               private fun collect(node: AccessibilityNodeInfo?, sb: StringBuilder, depth: Int) {
                   if (node == null || depth > 40 || sb.length > 20000) return
                   node.text?.toString()?.trim()?.let { if (it.isNotEmpty()) sb.append(it).append('\n') }
                   node.contentDescription?.toString()?.trim()?.let { if (it.isNotEmpty()) sb.append(it).append('\n') }
                   for (i in 0 until node.childCount) collect(node.getChild(i), sb, depth + 1)
               }
-
               private fun speak(r: Calc.Result) {
                   if (!getSharedPreferences("cfg", MODE_PRIVATE).getBoolean("ttsEnabled", true)) return
                   tts?.speak(r.speech, TextToSpeech.QUEUE_FLUSH, null, "offer")
               }
-
               private fun vibrate(color: Int) {
                   val v = vibrator ?: return
-                  val ms = when (color) {
-                      Color.parseColor("#4CAF50") -> 120L
-                      Color.parseColor("#FFEB3B") -> 250L
-                      else                        -> 500L
-                  }
-                  if (Build.VERSION.SDK_INT >= 26)
-                      v.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE))
+                  val ms = when (color) { Color.parseColor("#4CAF50") -> 120L; Color.parseColor("#FFEB3B") -> 250L; else -> 500L }
+                  if (Build.VERSION.SDK_INT >= 26) v.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE))
                   else @Suppress("DEPRECATION") v.vibrate(ms)
               }
 
@@ -1423,161 +1024,89 @@ jobs:
                   if (bubbleView != null) return
                   val sizePx = (56 * resources.displayMetrics.density).toInt()
                   val bubble = View(this).apply {
-                      val drawable = GradientDrawable().apply {
+                      background = GradientDrawable().apply {
                           shape = GradientDrawable.OVAL
                           setColor(Color.parseColor("#80FF0000"))
                           setStroke((2 * resources.displayMetrics.density).toInt(), Color.RED)
                       }
-                      background = drawable
                       setOnTouchListener(bubbleDragListener())
                   }
-
-                  val type = if (Build.VERSION.SDK_INT >= 26)
-                      WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                  else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
-
-                  val params = WindowManager.LayoutParams(
-                      sizePx, sizePx, type,
+                  val type = if (Build.VERSION.SDK_INT >= 26) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                      else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
+                  val params = WindowManager.LayoutParams(sizePx, sizePx, type,
                       WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
-                      PixelFormat.TRANSLUCENT
-                  ).apply {
-                      gravity = Gravity.TOP or Gravity.START
-                      x = 30
-                      y = 400
-                  }
-
-                  try {
-                      wm.addView(bubble, params)
-                      bubbleView = bubble
-                      bubble.tag = params
-                  } catch (_: Exception) {}
+                      PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START; x = 30; y = 400 }
+                  try { wm.addView(bubble, params); bubbleView = bubble; bubble.tag = params } catch (_: Exception) {}
               }
 
               private fun bubbleDragListener(): View.OnTouchListener {
-                  var startX = 0; var startY = 0
-                  var touchX = 0f; var touchY = 0f
+                  var sX = 0; var sY = 0; var tX = 0f; var tY = 0f
                   return View.OnTouchListener { v, e ->
-                      val params = v.tag as? WindowManager.LayoutParams ?: return@OnTouchListener false
+                      val p = v.tag as? WindowManager.LayoutParams ?: return@OnTouchListener false
                       when (e.action) {
-                          MotionEvent.ACTION_DOWN -> {
-                              startX = params.x; startY = params.y
-                              touchX = e.rawX; touchY = e.rawY
-                              true
-                          }
+                          MotionEvent.ACTION_DOWN -> { sX = p.x; sY = p.y; tX = e.rawX; tY = e.rawY; true }
                           MotionEvent.ACTION_MOVE -> {
-                              params.x = startX + (e.rawX - touchX).toInt()
-                              params.y = startY + (e.rawY - touchY).toInt()
-                              try { wm.updateViewLayout(v, params) } catch (_: Exception) {}
-                              true
+                              p.x = sX + (e.rawX - tX).toInt(); p.y = sY + (e.rawY - tY).toInt()
+                              try { wm.updateViewLayout(v, p) } catch (_: Exception) {}; true
                           }
                           else -> false
                       }
                   }
               }
-
-              private fun removeBubble() {
-                  bubbleView?.let { try { wm.removeView(it) } catch (_: Exception) {} }
-                  bubbleView = null
-              }
+              private fun removeBubble() { bubbleView?.let { try { wm.removeView(it) } catch (_: Exception) {} }; bubbleView = null }
 
               private fun showOverlay(r: Calc.Result) {
                   removeOverlay()
                   val container = LinearLayout(this).apply {
                       orientation = LinearLayout.VERTICAL
-                      
-                      val bgDrawable = GradientDrawable().apply {
-                          setColor(Color.parseColor("#E6000000"))
-                          cornerRadius = 50f
-                          setStroke(6, r.color)
+                      background = GradientDrawable().apply {
+                          setColor(Color.parseColor("#E6000000")); cornerRadius = 50f; setStroke(6, r.color)
                       }
-                      background = bgDrawable
-                      setPadding(50, 40, 50, 40)
-                      elevation = 25f
-                      setOnTouchListener(dragListener())
+                      setPadding(50, 40, 50, 40); elevation = 25f; setOnTouchListener(dragListener())
                   }
                   val close = TextView(this).apply {
-                      text = "\u00d7"
-                      setTextColor(Color.WHITE)
-                      textSize = 26f
-                      gravity = Gravity.END
-                      setOnClickListener { removeOverlay() }
+                      text = "\u00d7"; setTextColor(Color.WHITE); textSize = 26f
+                      gravity = Gravity.END; setOnClickListener { removeOverlay() }
                   }
                   val body = TextView(this).apply {
-                      text = r.text
-                      setTextColor(r.color)
-                      textSize = 20f
-                      typeface = Typeface.DEFAULT_BOLD
-                      setShadowLayer(6f, 0f, 3f, Color.BLACK)
+                      text = r.text; setTextColor(r.color); textSize = 20f
+                      typeface = Typeface.DEFAULT_BOLD; setShadowLayer(6f, 0f, 3f, Color.BLACK)
                   }
-                  container.addView(close)
-                  container.addView(body)
-
-                  val type = if (Build.VERSION.SDK_INT >= 26)
-                      WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                  else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
-
-                  val params = WindowManager.LayoutParams(
-                      WindowManager.LayoutParams.WRAP_CONTENT,
-                      WindowManager.LayoutParams.WRAP_CONTENT,
-                      type,
-                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                      PixelFormat.TRANSLUCENT
-                  ).apply { gravity = Gravity.TOP or Gravity.START; x = 20; y = 150 }
-
-                  try {
-                      wm.addView(container, params)
-                      overlay = container
-                      container.tag = params
-                      handler.postDelayed(autoDismiss, 20_000L)
-                  } catch (e: Exception) {}
+                  container.addView(close); container.addView(body)
+                  val type = if (Build.VERSION.SDK_INT >= 26) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                      else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
+                  val params = WindowManager.LayoutParams(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT,
+                      type, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, PixelFormat.TRANSLUCENT).apply {
+                      gravity = Gravity.TOP or Gravity.START; x = 20; y = 150
+                  }
+                  try { wm.addView(container, params); overlay = container; container.tag = params; handler.postDelayed(autoDismiss, 20_000L) } catch (_: Exception) {}
               }
 
               private fun dragListener(): View.OnTouchListener {
-                  var startX = 0; var startY = 0
-                  var touchX = 0f; var touchY = 0f
-                  var moved = false
+                  var sX = 0; var sY = 0; var tX = 0f; var tY = 0f; var moved = false
                   return View.OnTouchListener { v, e ->
-                      val params = v.tag as? WindowManager.LayoutParams ?: return@OnTouchListener false
+                      val p = v.tag as? WindowManager.LayoutParams ?: return@OnTouchListener false
                       when (e.action) {
-                          MotionEvent.ACTION_DOWN -> {
-                              startX = params.x; startY = params.y
-                              touchX = e.rawX; touchY = e.rawY
-                              moved = false; true
-                          }
+                          MotionEvent.ACTION_DOWN -> { sX = p.x; sY = p.y; tX = e.rawX; tY = e.rawY; moved = false; true }
                           MotionEvent.ACTION_MOVE -> {
-                              val dx = (e.rawX - touchX).toInt()
-                              val dy = (e.rawY - touchY).toInt()
+                              val dx = (e.rawX - tX).toInt(); val dy = (e.rawY - tY).toInt()
                               if (dx * dx + dy * dy > 100) moved = true
-                              if (moved) {
-                                  params.x = startX + dx
-                                  params.y = startY + dy
-                                  try { wm.updateViewLayout(v, params) } catch (_: Exception) {}
-                              }
+                              if (moved) { p.x = sX + dx; p.y = sY + dy; try { wm.updateViewLayout(v, p) } catch (_: Exception) {} }
                               true
                           }
-                          MotionEvent.ACTION_UP -> {
-                              if (!moved) removeOverlay()
-                              true
-                          }
+                          MotionEvent.ACTION_UP -> { if (!moved) removeOverlay(); true }
                           else -> false
                       }
                   }
               }
-
               private fun removeOverlay() {
                   handler.removeCallbacks(autoDismiss)
                   overlay?.let { try { wm.removeView(it) } catch (_: Exception) {} }
                   overlay = null
               }
-
-              override fun onInterrupt() { 
-                  removeOverlay() 
-                  removeBubble()
-              }
-
+              override fun onInterrupt() { removeOverlay(); removeBubble() }
               override fun onDestroy() {
-                  removeOverlay()
-                  removeBubble()
+                  removeOverlay(); removeBubble()
                   try { unregisterReceiver(screenOff) } catch (_: Exception) {}
                   tts?.stop(); tts?.shutdown(); tts = null
                   super.onDestroy()
