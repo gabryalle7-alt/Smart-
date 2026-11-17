@@ -75,8 +75,8 @@ jobs:
                   applicationId "ro.profitride"
                   minSdk 24
                   targetSdk 34
-                  versionCode 21
-                  versionName "3.6"
+                  versionCode 22
+                  versionName "3.7"
               }
               buildTypes {
                   release {
@@ -866,7 +866,6 @@ jobs:
           }
           ''')
 
-          # AM MODIFICAT SUMMARY ACTIVITY PENTRU A AFISA DETALIAT CHELTUIELILE
           w('app/src/main/java/ro/profitride/SummaryActivity.kt', '''
           package ro.profitride
           import android.app.AlertDialog
@@ -897,11 +896,9 @@ jobs:
                           .setNegativeButton("Nu", null).show()
                   }
               }
-
               private fun loadSummary() {
                   var rev = 0f; var exp = 0f; var net = 0f
                   var comm = 0f; var fuel = 0f; var wear = 0f
-                  
                   val eff = maxOf(getStart(), prefs.getLong("reset_$period", 0L))
                   try {
                       openFileInput("offers.csv").bufferedReader().useLines { l ->
@@ -911,7 +908,6 @@ jobs:
                                   rev += p[1].toFloatOrNull() ?: 0f
                                   exp += p[6].toFloatOrNull() ?: 0f
                                   net += p[7].toFloatOrNull() ?: 0f
-                                  // Daca avem formatul nou (11 coloane), luam si detaliile
                                   if (p.size >= 11) {
                                       comm += p[8].toFloatOrNull() ?: 0f
                                       fuel += p[9].toFloatOrNull() ?: 0f
@@ -921,7 +917,6 @@ jobs:
                           }
                       }
                   } catch (_: Exception) {}
-
                   content.text = """
                       [VENITURI]
                       Total Încasări: %.2f RON
@@ -937,7 +932,6 @@ jobs:
                       PROFIT NET: %.2f RON
                   """.trimIndent().format(rev, comm, fuel, wear, exp, net)
               }
-
               private fun getStart(): Long {
                   val cal = Calendar.getInstance()
                   when (period) {
@@ -998,8 +992,10 @@ jobs:
           }
           ''')
 
+          # OFFER READER - Inlocuim bulina cu bara de status laterala + panou info/butoane rapide
           w('app/src/main/java/ro/profitride/OfferReader.kt', r'''
           package ro.profitride
+
           import android.accessibilityservice.AccessibilityService
           import android.content.BroadcastReceiver
           import android.content.Context
@@ -1024,6 +1020,7 @@ jobs:
           import android.view.WindowManager
           import android.view.accessibility.AccessibilityEvent
           import android.view.accessibility.AccessibilityNodeInfo
+          import android.widget.Button
           import android.widget.LinearLayout
           import android.widget.TextView
           import android.widget.Toast
@@ -1031,12 +1028,16 @@ jobs:
           import java.util.Locale
 
           class OfferReader : AccessibilityService() {
+
               companion object { var isStopped = false }
+
               private var overlay: View? = null
-              private var bubbleView: View? = null
+              private var sideBarView: View? = null
+              private var sidePanelView: View? = null
               private lateinit var wm: WindowManager
               private val handler = Handler(Looper.getMainLooper())
               private val autoDismiss = Runnable { removeOverlay() }
+
               private var tts: TextToSpeech? = null
               private var vibrator: Vibrator? = null
               private val sb = StringBuilder(2048)
@@ -1046,17 +1047,20 @@ jobs:
               private var pendingResult: Calc.Result? = null
 
               private val screenOff = object : BroadcastReceiver() {
-                  override fun onReceive(c: Context?, i: Intent?) { if (i?.action == Intent.ACTION_SCREEN_OFF) removeOverlay() }
+                  override fun onReceive(c: Context?, i: Intent?) {
+                      if (i?.action == Intent.ACTION_SCREEN_OFF) { removeOverlay(); removeSidePanel() }
+                  }
               }
 
               override fun onServiceConnected() {
                   super.onServiceConnected()
                   wm = getSystemService(WINDOW_SERVICE) as WindowManager
-                  vibrator = if (Build.VERSION.SDK_INT >= 31) (getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
-                      else @Suppress("DEPRECATION") getSystemService(VIBRATOR_SERVICE) as Vibrator
+                  vibrator = if (Build.VERSION.SDK_INT >= 31)
+                      (getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
+                  else @Suppress("DEPRECATION") getSystemService(VIBRATOR_SERVICE) as Vibrator
                   tts = TextToSpeech(this) { status -> if (status == TextToSpeech.SUCCESS) tts?.language = Locale("ro", "RO") }
                   try { ContextCompat.registerReceiver(this, screenOff, IntentFilter(Intent.ACTION_SCREEN_OFF), ContextCompat.RECEIVER_NOT_EXPORTED) } catch (_: Exception) {}
-                  if (!isStopped) showBubble()
+                  if (!isStopped) showSideBar()
               }
 
               override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -1091,7 +1095,6 @@ jobs:
                       val o = pendingOffer!!; val r = pendingResult!!
                       try {
                           openFileOutput("offers.csv", Context.MODE_APPEND).bufferedWriter().use {
-                              // FORMAT NOU: adaugam si comision, combustibil, uzura
                               it.appendLine("${System.currentTimeMillis()},${o.priceRon},${o.pickupKm},${o.tripKm},${r.profitPerKm},${r.profitPerHour},${r.totalExpenses},${r.netProfit},${r.commissionCut},${r.fuelCost},${r.extraCost}")
                           }
                           handler.post { Toast.makeText(this, "Cursă salvată în sumar!", Toast.LENGTH_LONG).show() }
@@ -1121,41 +1124,207 @@ jobs:
                   else @Suppress("DEPRECATION") v.vibrate(ms)
               }
 
-              private fun showBubble() {
-                  if (bubbleView != null) return
-                  val sizePx = (56 * resources.displayMetrics.density).toInt()
-                  val bubble = View(this).apply {
+              // ============== BARA LATERALA DE STATUS ==============
+              private fun showSideBar() {
+                  if (sideBarView != null) return
+                  val density = resources.displayMetrics.density
+                  val widthPx = (6 * density).toInt()
+                  val heightPx = (180 * density).toInt()
+
+                  val bar = View(this).apply {
                       background = GradientDrawable().apply {
-                          shape = GradientDrawable.OVAL
-                          setColor(Color.parseColor("#80FF0000"))
-                          setStroke((2 * resources.displayMetrics.density).toInt(), Color.RED)
+                          shape = GradientDrawable.RECTANGLE
+                          setColor(Color.parseColor("#80D32F2F")) // rosu semi-transparent ~50%
+                          cornerRadii = floatArrayOf(0f, 6f*density, 6f*density, 0f, 0f, 6f*density, 6f*density, 0f)
                       }
-                      setOnTouchListener(bubbleDragListener())
+                      setOnClickListener { toggleSidePanel() }
+                      setOnTouchListener(sideBarDragListener())
                   }
-                  val type = if (Build.VERSION.SDK_INT >= 26) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                      else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
-                  val params = WindowManager.LayoutParams(sizePx, sizePx, type,
+
+                  val type = if (Build.VERSION.SDK_INT >= 26)
+                      WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                  else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
+
+                  val params = WindowManager.LayoutParams(
+                      widthPx, heightPx, type,
                       WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
-                      PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.START; x = 30; y = 400 }
-                  try { wm.addView(bubble, params); bubbleView = bubble; bubble.tag = params } catch (_: Exception) {}
+                      PixelFormat.TRANSLUCENT
+                  ).apply {
+                      gravity = Gravity.START or Gravity.CENTER_VERTICAL
+                      x = 0
+                      y = 0
+                  }
+
+                  try {
+                      wm.addView(bar, params)
+                      sideBarView = bar
+                      bar.tag = params
+                  } catch (_: Exception) {}
               }
 
-              private fun bubbleDragListener(): View.OnTouchListener {
-                  var sX = 0; var sY = 0; var tX = 0f; var tY = 0f
+              private fun sideBarDragListener(): View.OnTouchListener {
+                  var startY = 0; var touchY = 0f; var moved = false
                   return View.OnTouchListener { v, e ->
-                      val p = v.tag as? WindowManager.LayoutParams ?: return@OnTouchListener false
+                      val params = v.tag as? WindowManager.LayoutParams ?: return@OnTouchListener false
                       when (e.action) {
-                          MotionEvent.ACTION_DOWN -> { sX = p.x; sY = p.y; tX = e.rawX; tY = e.rawY; true }
+                          MotionEvent.ACTION_DOWN -> {
+                              startY = params.y; touchY = e.rawY; moved = false; true
+                          }
                           MotionEvent.ACTION_MOVE -> {
-                              p.x = sX + (e.rawX - tX).toInt(); p.y = sY + (e.rawY - tY).toInt()
-                              try { wm.updateViewLayout(v, p) } catch (_: Exception) {}; true
+                              val dy = (e.rawY - touchY).toInt()
+                              if (Math.abs(dy) > 15) moved = true
+                              if (moved) {
+                                  params.y = startY + dy
+                                  try { wm.updateViewLayout(v, params) } catch (_: Exception) {}
+                              }
+                              true
+                          }
+                          MotionEvent.ACTION_UP -> {
+                              if (!moved) v.performClick()
+                              true
                           }
                           else -> false
                       }
                   }
               }
-              private fun removeBubble() { bubbleView?.let { try { wm.removeView(it) } catch (_: Exception) {} }; bubbleView = null }
 
+              private fun toggleSidePanel() {
+                  if (sidePanelView != null) { removeSidePanel(); return }
+                  showSidePanel()
+              }
+
+              private fun showSidePanel() {
+                  removeSidePanel()
+                  val density = resources.displayMetrics.density
+
+                  val panel = LinearLayout(this).apply {
+                      orientation = LinearLayout.VERTICAL
+                      background = GradientDrawable().apply {
+                          setColor(Color.parseColor("#F0111111"))
+                          cornerRadius = 20f * density
+                          setStroke((2*density).toInt(), Color.parseColor("#4CAF50"))
+                      }
+                      setPadding((16*density).toInt(), (16*density).toInt(), (16*density).toInt(), (16*density).toInt())
+                  }
+
+                  // Titlu
+                  val title = TextView(this).apply {
+                      text = "ProfitRide · Activ"
+                      setTextColor(Color.parseColor("#4CAF50"))
+                      textSize = 16f
+                      typeface = Typeface.DEFAULT_BOLD
+                      setPadding(0, 0, 0, (10*density).toInt())
+                  }
+                  panel.addView(title)
+
+                  // Info ultima oferta din CSV
+                  val lastOfferText = readLastOfferInfo()
+                  val info = TextView(this).apply {
+                      text = lastOfferText
+                      setTextColor(Color.WHITE)
+                      textSize = 12f
+                      typeface = Typeface.MONOSPACE
+                      setPadding(0, 0, 0, (14*density).toInt())
+                  }
+                  panel.addView(info)
+
+                  // Butoane rapide
+                  val btnStyle = { text: String, color: Int, onClick: () -> Unit ->
+                      val b = Button(this).apply {
+                          this.text = text
+                          setTextColor(Color.WHITE)
+                          textSize = 13f
+                          background = GradientDrawable().apply {
+                              setColor(color)
+                              cornerRadius = 30f * density
+                          }
+                          setPadding((12*density).toInt(), (8*density).toInt(), (12*density).toInt(), (8*density).toInt())
+                          setOnClickListener { onClick() }
+                      }
+                      b
+                  }
+
+                  panel.addView(btnStyle("📊 Sumar Zilnic", Color.parseColor("#9C27B0")) {
+                      removeSidePanel()
+                      val i = Intent(this, SummaryActivity::class.java)
+                      i.putExtra("PERIOADA", "DAY")
+                      i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                      startActivity(i)
+                  })
+
+                  panel.addView(btnStyle("⚙️ Setări costuri", Color.parseColor("#2196F3")) {
+                      removeSidePanel()
+                      val i = Intent(this, SettingsActivity::class.java)
+                      i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                      startActivity(i)
+                  })
+
+                  panel.addView(btnStyle("🚗 Autovehicul", Color.parseColor("#E91E63")) {
+                      removeSidePanel()
+                      val i = Intent(this, VehicleActivity::class.java)
+                      i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                      startActivity(i)
+                  })
+
+                  panel.addView(btnStyle("⏹ Oprește serviciul", Color.parseColor("#B71C1C")) {
+                      isStopped = true
+                      removeSidePanel()
+                      removeSideBar()
+                      handler.post { Toast.makeText(this@OfferReader, "Serviciu oprit", Toast.LENGTH_SHORT).show() }
+                  })
+
+                  val type = if (Build.VERSION.SDK_INT >= 26)
+                      WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                  else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE
+
+                  val params = WindowManager.LayoutParams(
+                      (280 * density).toInt(),
+                      WindowManager.LayoutParams.WRAP_CONTENT,
+                      type,
+                      WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                      PixelFormat.TRANSLUCENT
+                  ).apply {
+                      gravity = Gravity.START or Gravity.CENTER_VERTICAL
+                      x = (20 * density).toInt()
+                      y = 0
+                  }
+
+                  try {
+                      wm.addView(panel, params)
+                      sidePanelView = panel
+                  } catch (_: Exception) {}
+
+                  // Auto-inchide panoul dupa 15 sec
+                  handler.postDelayed({ removeSidePanel() }, 15000L)
+              }
+
+              private fun readLastOfferInfo(): String {
+                  return try {
+                      val lines = openFileInput("offers.csv").bufferedReader().use { it.readLines() }
+                      val last = lines.lastOrNull { it.isNotBlank() } ?: return "Nicio cursă salvată încă."
+                      val p = last.split(",")
+                      if (p.size >= 8) {
+                          "Ultima cursă:\n" +
+                          "Tarif:  ${"%.2f".format(p[1].toFloatOrNull() ?: 0f)} RON\n" +
+                          "Km:     ${"%.1f".format((p[2].toFloatOrNull() ?: 0f) + (p[3].toFloatOrNull() ?: 0f))}\n" +
+                          "Net:    ${"%.2f".format(p[7].toFloatOrNull() ?: 0f)} RON\n" +
+                          "RON/km: ${"%.2f".format(p[4].toFloatOrNull() ?: 0f)}\n" +
+                          "RON/h:  ${"%.0f".format(p[5].toFloatOrNull() ?: 0f)}"
+                      } else "Date incomplete"
+                  } catch (_: Exception) { "Nicio cursă salvată încă." }
+              }
+
+              private fun removeSidePanel() {
+                  sidePanelView?.let { try { wm.removeView(it) } catch (_: Exception) {} }
+                  sidePanelView = null
+              }
+
+              private fun removeSideBar() {
+                  sideBarView?.let { try { wm.removeView(it) } catch (_: Exception) {} }
+                  sideBarView = null
+              }
+
+              // ============== OVERLAY OFERTA (neschimbat) ==============
               private fun showOverlay(r: Calc.Result) {
                   removeOverlay()
                   val container = LinearLayout(this).apply {
@@ -1205,9 +1374,9 @@ jobs:
                   overlay?.let { try { wm.removeView(it) } catch (_: Exception) {} }
                   overlay = null
               }
-              override fun onInterrupt() { removeOverlay(); removeBubble() }
+              override fun onInterrupt() { removeOverlay(); removeSideBar(); removeSidePanel() }
               override fun onDestroy() {
-                  removeOverlay(); removeBubble()
+                  removeOverlay(); removeSideBar(); removeSidePanel()
                   try { unregisterReceiver(screenOff) } catch (_: Exception) {}
                   tts?.stop(); tts?.shutdown(); tts = null
                   super.onDestroy()
